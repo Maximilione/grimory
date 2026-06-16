@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { X, ChevronsUp, Plus, Sparkles, Loader2, Star, Award } from "lucide-react";
-import { CLASSES, SKILLS, classByKey, featureEffects } from "@/lib/srd";
+import { CLASSES, SKILLS, ABILITY_NAMES, classByKey, featureEffects } from "@/lib/srd";
 import { abilityMod, getClasses, buildSpellSlots, derive } from "@/lib/rules";
 import { fetchClassFeatures, type ClassFeature } from "@/lib/srdApi";
+import { GENERAL_FEATS } from "@/lib/feats2024";
 import { uid } from "@/lib/db";
+import { ABILITIES, type Ability } from "@/lib/types";
 import type { SectionProps } from "./common";
 
 /**
@@ -102,17 +104,7 @@ export function LevelUpModal({ character: c, update, onClose }: SectionProps & {
               <p className="text-sm">
                 <strong>{result.className}</strong> ora a livello {result.classLevel} · personaggio livello {c.level}.
               </p>
-              {result.asi && (
-                <div className="card p-3" style={{ borderColor: "var(--accent)" }}>
-                  <p className="font-semibold flex items-center gap-2" style={{ color: "var(--accent)" }}>
-                    <Star size={15} /> Aumento Caratteristiche o Talento
-                  </p>
-                  <p className="text-xs text-[var(--muted)] mt-1">
-                    A questo livello scegli: +2 a una caratteristica (o +1 a due) <em>oppure</em> un talento.
-                    Aggiorna i punteggi in Caratteristiche o aggiungi il talento in Tratti.
-                  </p>
-                </div>
-              )}
+              {result.asi && <AsiFeatPicker character={c} update={update} />}
               {result.gained.some((f) => /expertise|competenza/i.test(f.name)) && (
                 <ExpertisePicker character={c} update={update} />
               )}
@@ -179,6 +171,111 @@ export function LevelUpModal({ character: c, update, onClose }: SectionProps & {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** ASI level: choose +2/+1 ability increase OR a General feat (adds the feat as
+ * a privilege with its effects, plus the feat's +1 ability). */
+function AsiFeatPicker({ character: c, update }: SectionProps) {
+  const [tab, setTab] = useState<"asi" | "feat">("asi");
+  const [plus2, setPlus2] = useState<Ability | "">("");
+  const [plus1, setPlus1] = useState<Ability | "">("");
+  const [featName, setFeatName] = useState("");
+  const [featAbil, setFeatAbil] = useState<string>("");
+  const [done, setDone] = useState<string | null>(null);
+
+  const feat = GENERAL_FEATS.find((f) => f.name === featName);
+
+  function applyAsi() {
+    if (!plus2) return;
+    update((d) => {
+      d.abilities[plus2] = Math.min(20, d.abilities[plus2] + 2);
+      if (plus1 && plus1 !== plus2) d.abilities[plus1] = Math.min(20, d.abilities[plus1] + 1);
+    });
+    setDone(`+2 ${ABILITY_NAMES[plus2]}${plus1 && plus1 !== plus2 ? `, +1 ${ABILITY_NAMES[plus1 as Ability]}` : ""}`);
+  }
+  function applyFeat() {
+    if (!feat) return;
+    update((d) => {
+      if (featAbil) d.abilities[featAbil as Ability] = Math.min(20, d.abilities[featAbil as Ability] + 1);
+      d.features.unshift({
+        id: uid(),
+        name: feat.name,
+        source: "Talento",
+        description: feat.desc,
+        ref: feat.name,
+        ...(feat.effects ? { effects: feat.effects } : {}),
+      });
+    });
+    setDone(`Talento: ${feat.name}${featAbil ? ` (+1 ${ABILITY_NAMES[featAbil as Ability]})` : ""}`);
+  }
+
+  if (done)
+    return (
+      <div className="card p-3" style={{ borderColor: "var(--good)" }}>
+        <p className="text-sm" style={{ color: "var(--good)" }}>✓ {done}</p>
+      </div>
+    );
+
+  return (
+    <div className="card p-3 flex flex-col gap-3" style={{ borderColor: "var(--accent)" }}>
+      <p className="font-semibold flex items-center gap-2" style={{ color: "var(--accent)" }}>
+        <Star size={15} /> Aumento di Caratteristica o Talento
+      </p>
+      <div className="flex gap-2">
+        {(["asi", "feat"] as const).map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className="text-sm px-3 py-1.5 rounded-lg border flex-1"
+            style={{
+              borderColor: tab === t ? "var(--accent)" : "var(--border)",
+              background: tab === t ? "var(--accent-soft)" : "transparent",
+              color: tab === t ? "var(--accent)" : "var(--text)",
+            }}
+          >
+            {t === "asi" ? "Caratteristiche" : "Talento"}
+          </button>
+        ))}
+      </div>
+
+      {tab === "asi" ? (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 flex-wrap text-sm">
+            <label className="flex items-center gap-1">+2
+              <select className="field py-1 px-2 w-auto" value={plus2} onChange={(e) => setPlus2(e.target.value as Ability)}>
+                <option value="">—</option>
+                {ABILITIES.map((a) => (<option key={a} value={a}>{ABILITY_NAMES[a]}</option>))}
+              </select>
+            </label>
+            <label className="flex items-center gap-1">+1
+              <select className="field py-1 px-2 w-auto" value={plus1} onChange={(e) => setPlus1(e.target.value as Ability)}>
+                <option value="">—</option>
+                {ABILITIES.filter((a) => a !== plus2).map((a) => (<option key={a} value={a}>{ABILITY_NAMES[a]}</option>))}
+              </select>
+            </label>
+          </div>
+          <button className="btn btn-accent text-sm self-start" disabled={!plus2} onClick={applyAsi}>Conferma</button>
+        </div>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <select className="field" value={featName} onChange={(e) => { setFeatName(e.target.value); setFeatAbil(""); }}>
+            <option value="">— scegli talento —</option>
+            {GENERAL_FEATS.map((f) => (<option key={f.name} value={f.name}>{f.name}</option>))}
+          </select>
+          {feat && <p className="text-xs text-[var(--muted)]">{feat.desc}</p>}
+          {feat?.abilities && (
+            <label className="text-sm flex items-center gap-2">+1 a
+              <select className="field py-1 px-2 w-auto" value={featAbil} onChange={(e) => setFeatAbil(e.target.value)}>
+                <option value="">—</option>
+                {feat.abilities.map((a) => (<option key={a} value={a}>{ABILITY_NAMES[a as Ability]}</option>))}
+              </select>
+            </label>
+          )}
+          <button className="btn btn-accent text-sm self-start" disabled={!feat} onClick={applyFeat}>Conferma talento</button>
+        </div>
+      )}
     </div>
   );
 }

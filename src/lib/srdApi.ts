@@ -7,7 +7,7 @@
 
 import { OPEN5E_API } from "./srd";
 import type { InventoryItem, Spell, Weapon } from "./types";
-import { uid } from "./db";
+import { uid, getSrdCache, putSrdCache } from "./db";
 
 const TIMEOUT = 12000;
 
@@ -31,6 +31,10 @@ const cache = new Map<string, Promise<any[]>>();
 async function fetchAll(url: string): Promise<any[]> {
   if (cache.has(url)) return cache.get(url)!;
   const p = (async () => {
+    // 1) persistent cache (IndexedDB) — survives reloads, works offline
+    const stored = await getSrdCache(url);
+    if (stored && stored.length) return stored as any[];
+    // 2) network (paginated)
     const out: any[] = [];
     let next: string | null = `${url}${url.includes("?") ? "&" : "?"}limit=100`;
     let guard = 0;
@@ -39,6 +43,7 @@ async function fetchAll(url: string): Promise<any[]> {
       out.push(...(data.results ?? []));
       next = data.next ?? null;
     }
+    if (out.length) putSrdCache(url, out); // persist for next time (fire & forget)
     return out;
   })().catch((e) => {
     cache.delete(url); // don't cache failures — let it retry next time
@@ -46,6 +51,27 @@ async function fetchAll(url: string): Promise<any[]> {
   });
   cache.set(url, p);
   return p;
+}
+
+/** The fixed SRD datasets the app leans on most. Warmed on startup so autofill,
+ * creation and the manual are instant (and offline) after the first download. */
+const PREFETCH_URLS = [
+  `${OPEN5E_API}/v2/weapons/?document__key=srd-2024`,
+  `${OPEN5E_API}/v2/armor/?document__key=srd-2024`,
+  `${OPEN5E_API}/v2/spells/?document__key=srd-2024`,
+  `${OPEN5E_API}/v2/classes/?document__key=srd-2024`,
+  `${OPEN5E_API}/v1/backgrounds/`,
+];
+
+/** Download + persist the common datasets. Safe to call repeatedly (deduped). */
+export async function prefetchSrd(): Promise<void> {
+  await Promise.all(PREFETCH_URLS.map((u) => fetchAll(u).catch(() => {})));
+}
+
+/** True if all common datasets are already in the persistent cache. */
+export async function srdCacheReady(): Promise<boolean> {
+  const rows = await Promise.all(PREFETCH_URLS.map((u) => getSrdCache(u)));
+  return rows.every((r) => r && r.length > 0);
 }
 
 function nameMatch(records: any[], q: string, nameKey = "name"): any[] {
@@ -74,29 +100,54 @@ export interface SearchHit<T> {
   build: () => T;
 }
 
-/** Spells from the 2024 SRD. */
+function mapSpell(r: any): Omit<Spell, "id"> {
+  return {
+    name: r.name,
+    level: r.level ?? 0,
+    school: r.school?.name,
+    castingTime: r.casting_time,
+    range: r.range_text,
+    duration: r.duration,
+    components: [r.verbal && "V", r.somatic && "S", r.material && "M"].filter(Boolean).join(", "),
+    damage: r.damage_roll || undefined,
+    description: descToText(r.desc, r.higher_level),
+    prepared: true,
+    ref: r.name,
+  };
+}
+function spellHit(r: any): SearchHit<Omit<Spell, "id">> {
+  const tags = [r.concentration && "concentr.", r.ritual && "rituale"].filter(Boolean);
+  return {
+    key: r.key,
+    name: r.name,
+    subtitle: `${r.level === 0 ? "Trucchetto" : `Liv. ${r.level}`} · ${r.school?.name ?? ""}${tags.length ? " · " + tags.join(", ") : ""}`,
+    build: () => mapSpell(r),
+  };
+}
+
+/** Spells from the 2024 SRD (name search). */
 export async function searchSpells(q: string): Promise<SearchHit<Omit<Spell, "id">>[]> {
   if (!q.trim()) return [];
   try {
     const all = await fetchAll(`${OPEN5E_API}/v2/spells/?document__key=srd-2024`);
-    return nameMatch(all, q).map((r: any) => ({
-      key: r.key,
-      name: r.name,
-      subtitle: `${r.level === 0 ? "Trucchetto" : `Liv. ${r.level}`} · ${r.school?.name ?? ""}`,
-      build: (): Omit<Spell, "id"> => ({
-        name: r.name,
-        level: r.level ?? 0,
-        school: r.school?.name,
-        castingTime: r.casting_time,
-        range: r.range_text,
-        duration: r.duration,
-        components: [r.verbal && "V", r.somatic && "S", r.material && "M"].filter(Boolean).join(", "),
-        damage: r.damage_roll || undefined,
-        description: descToText(r.desc, r.higher_level),
-        prepared: true,
-        ref: r.name,
-      }),
-    }));
+    return nameMatch(all, q).map(spellHit);
+  } catch {
+    return [];
+  }
+}
+
+/** All 2024 spells available to the given class(es), sorted by level then name. */
+export async function fetchClassSpells(classKeys: string[]): Promise<SearchHit<Omit<Spell, "id">>[]> {
+  try {
+    const all = await fetchAll(`${OPEN5E_API}/v2/spells/?document__key=srd-2024`);
+    const keys = new Set(classKeys.map((k) => `srd-2024_${k.toLowerCase()}`));
+    const names = new Set(classKeys.map((k) => k.toLowerCase()));
+    return all
+      .filter((r: any) =>
+        (r.classes ?? []).some((c: any) => keys.has(c.key) || names.has((c.name ?? "").toLowerCase())),
+      )
+      .sort((a: any, b: any) => (a.level ?? 0) - (b.level ?? 0) || a.name.localeCompare(b.name))
+      .map(spellHit);
   } catch {
     return [];
   }
@@ -478,32 +529,11 @@ function parseEquipList(text: string): string[] {
 export async function fetchBackgrounds(): Promise<BackgroundInfo[]> {
   const out: BackgroundInfo[] = [];
   const taken = new Set<string>();
-  // --- native 2024 ---
-  try {
-    const all = await fetchAll(`${OPEN5E_API}/v2/backgrounds/?document__key=srd-2024`);
-    for (const r of all) {
-      const ben: { type?: string; desc?: string }[] = Array.isArray(r.benefits) ? r.benefits : [];
-      const find = (t: string) => ben.find((b) => b.type === t)?.desc ?? "";
-      const abilityOptions: string[] = [];
-      for (const [en, key] of Object.entries(ABILITY_EN)) {
-        if (new RegExp(en, "i").test(find("ability_score"))) abilityOptions.push(key);
-      }
-      const eqText = find("equipment");
-      const aPart = /\(A\)([\s\S]*?)(?:;?\s*or\s*\(B\)|$)/i.exec(eqText)?.[1] ?? eqText;
-      taken.add(r.name.toLowerCase());
-      out.push({
-        key: r.key,
-        name: r.name,
-        edition: "2024",
-        skills: skillsFromText(find("skill_proficiency")),
-        feat: find("feat") || undefined,
-        toolProf: find("tool_proficiency") || undefined,
-        abilityOptions,
-        equipment: parseEquipList(aPart),
-      });
-    }
-  } catch {
-    /* keep going to 2014 */
+  // --- native 2024 (16, bundled locally from the manual) ---
+  const { BACKGROUNDS_2024 } = await import("./backgrounds2024");
+  for (const bg of BACKGROUNDS_2024) {
+    taken.add(bg.name.toLowerCase());
+    out.push(bg);
   }
   // --- classic 2014, adapted to 2024 ---
   try {
@@ -535,6 +565,87 @@ export async function fetchBackgrounds(): Promise<BackgroundInfo[]> {
     /* native list already returned */
   }
   return out;
+}
+
+export interface ManualEntry {
+  key: string;
+  name: string;
+  type: string; // short category/stat line
+  desc: string;
+  category: "spell" | "monster" | "item" | "rule";
+}
+
+/** Unified manual lookup across Open5e (spells 2024, monsters, magic items, rules). */
+export async function manualSearch(
+  q: string,
+  category: "all" | ManualEntry["category"],
+): Promise<ManualEntry[]> {
+  if (!q.trim()) return [];
+  const want = (c: ManualEntry["category"]) => category === "all" || category === c;
+  const jobs: Promise<ManualEntry[]>[] = [];
+
+  if (want("spell")) {
+    jobs.push(
+      fetchAll(`${OPEN5E_API}/v2/spells/?document__key=srd-2024`)
+        .then((all) =>
+          nameMatch(all, q).slice(0, 12).map((r: any) => ({
+            key: `sp-${r.key}`,
+            name: r.name,
+            type: `Incantesimo · ${r.level === 0 ? "Trucchetto" : "Liv. " + r.level}${r.school?.name ? " · " + r.school.name : ""}`,
+            desc: descToText(r.desc, r.higher_level),
+            category: "spell" as const,
+          })),
+        )
+        .catch(() => []),
+    );
+  }
+  if (want("monster")) {
+    jobs.push(
+      get(`${OPEN5E_API}/v1/monsters/?search=${encodeURIComponent(q)}&limit=10`)
+        .then((d) =>
+          (d.results ?? []).map((r: any) => ({
+            key: `mo-${r.slug}`,
+            name: r.name,
+            type: `${r.size} ${r.type} · GS ${r.challenge_rating} · CA ${r.armor_class} · PF ${r.hit_points}`,
+            desc: typeof r.desc === "string" ? r.desc : "",
+            category: "monster" as const,
+          })),
+        )
+        .catch(() => []),
+    );
+  }
+  if (want("item")) {
+    jobs.push(
+      get(`${OPEN5E_API}/v1/magicitems/?search=${encodeURIComponent(q)}&limit=10`)
+        .then((d) =>
+          (d.results ?? []).map((r: any) => ({
+            key: `it-${r.slug}`,
+            name: r.name,
+            type: `${r.type ?? "Oggetto"}${r.rarity ? " · " + r.rarity : ""}${r.requires_attunement ? " · sintonia" : ""}`,
+            desc: typeof r.desc === "string" ? r.desc : "",
+            category: "item" as const,
+          })),
+        )
+        .catch(() => []),
+    );
+  }
+  if (want("rule")) {
+    jobs.push(
+      get(`${OPEN5E_API}/v1/sections/?search=${encodeURIComponent(q)}&limit=8`)
+        .then((d) =>
+          (d.results ?? []).map((r: any) => ({
+            key: `ru-${r.slug ?? r.name}`,
+            name: r.name,
+            type: "Regola",
+            desc: typeof r.desc === "string" ? r.desc : "",
+            category: "rule" as const,
+          })),
+        )
+        .catch(() => []),
+    );
+  }
+  const all = (await Promise.all(jobs)).flat();
+  return all;
 }
 
 /** withId — attach a fresh id to a built partial. */

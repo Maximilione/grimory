@@ -1,11 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, BookOpen } from "lucide-react";
+import { Plus, Trash2, BookOpen, Wand2 } from "lucide-react";
 import { uid } from "@/lib/db";
-import { derive } from "@/lib/rules";
+import { derive, getClasses } from "@/lib/rules";
+import { classByKey } from "@/lib/srd";
 import type { Spell } from "@/lib/types";
 import { searchSpells, withId } from "@/lib/srdApi";
+import { ClassSpellPicker } from "./ClassSpellPicker";
 import {
   SectionHeader,
   ItemCard,
@@ -22,6 +24,10 @@ const LEVELS = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 export function Spells({ character: c, update }: SectionProps) {
   const d = derive(c);
   const [search, setSearch] = useState(false);
+  const [classList, setClassList] = useState(false);
+  // caster classes the character has (for the class spell-list picker)
+  const casterKeys = getClasses(c).map((e) => e.key).filter((k) => classByKey(k)?.spellcasting);
+  const casterLabel = casterKeys.map((k) => classByKey(k)?.name ?? k).join(" / ");
 
   function add(level: number) {
     update((draft) =>
@@ -70,9 +76,16 @@ export function Spells({ character: c, update }: SectionProps) {
             : "Imposta la caratteristica da incantatore nelle Impostazioni."
         }
         action={
-          <button className="btn" onClick={() => setSearch(true)}>
-            <BookOpen size={16} /> Manuale
-          </button>
+          <div className="flex gap-2">
+            {casterKeys.length > 0 && (
+              <button className="btn" onClick={() => setClassList(true)}>
+                <Wand2 size={16} /> Lista classe
+              </button>
+            )}
+            <button className="btn" onClick={() => setSearch(true)}>
+              <BookOpen size={16} /> Manuale
+            </button>
+          </div>
         }
       />
       {search && (
@@ -81,6 +94,14 @@ export function Spells({ character: c, update }: SectionProps) {
           fetcher={searchSpells}
           onPick={(built) => update((d) => d.spells.unshift(withId(built)))}
           onClose={() => setSearch(false)}
+        />
+      )}
+      {classList && (
+        <ClassSpellPicker
+          classKeys={casterKeys}
+          classLabel={casterLabel}
+          onPick={(built) => update((d) => d.spells.unshift(withId(built)))}
+          onClose={() => setClassList(false)}
         />
       )}
 

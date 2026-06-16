@@ -128,13 +128,7 @@ export function Overview({ character: c, update }: SectionProps) {
           <span className="text-[11px] uppercase tracking-wide text-[var(--muted)] flex items-center gap-1">
             <Footprints size={12} /> Velocità
           </span>
-          <input
-            type="number"
-            inputMode="numeric"
-            className="bg-transparent text-center text-2xl font-bold w-full outline-none"
-            value={c.speed}
-            onChange={(e) => update((d) => (d.speed = +e.target.value || 0))}
-          />
+          <span className="text-2xl font-bold">{d.speed}</span>
         </div>
         <button className="stat-box justify-center" onClick={() => rollD20("Iniziativa", d.initiative)}>
           <PixelWatermark name="init" />

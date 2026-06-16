@@ -106,8 +106,11 @@ export function Settings({ character: c, update }: SectionProps) {
           <L label="CA base (armatura)">
             <input type="number" className="field" value={c.armorClass} onChange={(e) => update((d) => (d.armorClass = +e.target.value || 10))} />
           </L>
+          <L label="Velocità base (m)">
+            <input type="number" className="field" value={c.speed} onChange={(e) => update((d) => (d.speed = +e.target.value || 0))} />
+          </L>
         </div>
-        <p className="text-[11px] text-[var(--muted)]">La CA mostrata in Panoramica include gli effetti dei privilegi (es. Difesa senza Armatura).</p>
+        <p className="text-[11px] text-[var(--muted)]">CA e velocità in Panoramica includono gli effetti dei privilegi/talenti (es. Difesa senza Armatura, Speedy).</p>
         <button className="btn self-start" onClick={recalcSlots}>
           <RefreshCw size={15} /> Ricalcola slot da classe/livello
         </button>

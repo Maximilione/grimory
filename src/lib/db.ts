@@ -7,17 +7,47 @@ import Dexie, { type Table } from "dexie";
 import type { Ability, Character } from "./types";
 import { ABILITIES } from "./types";
 
+interface SrdCacheRow {
+  url: string;
+  data: unknown[];
+  at: number;
+}
+
 class SheetDB extends Dexie {
   characters!: Table<Character, string>;
+  srdCache!: Table<SrdCacheRow, string>;
   constructor() {
     super("dnd-sheets");
     this.version(1).stores({
       characters: "id, name, system, updatedAt",
     });
+    // v2: persistent cache of SRD datasets (Open5e) so they survive reloads,
+    // work offline, and avoid slow repeated API calls.
+    this.version(2).stores({
+      characters: "id, name, system, updatedAt",
+      srdCache: "url, at",
+    });
   }
 }
 
 export const db = new SheetDB();
+
+export async function getSrdCache(url: string): Promise<unknown[] | null> {
+  try {
+    const row = await db.srdCache.get(url);
+    return row?.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function putSrdCache(url: string, data: unknown[]): Promise<void> {
+  try {
+    await db.srdCache.put({ url, data, at: Date.now() });
+  } catch {
+    // quota/unavailable — memory cache still serves the session
+  }
+}
 
 const BACKUP_KEY = "dnd-sheets:autobackup";
 const BACKUP_KEEP = 5;

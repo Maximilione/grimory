@@ -10,6 +10,7 @@ import {
   MoreVertical,
   Copy,
   Trash2,
+  BookOpen,
 } from "lucide-react";
 import { useCharacters } from "@/lib/useCharacters";
 import { deleteCharacter, duplicateCharacter } from "@/lib/db";
@@ -35,9 +36,14 @@ export default function Home() {
         <InstallPrompt />
       </div>
 
-      <Link href="/create" className="btn btn-accent w-full mb-6 text-base py-3">
-        <Plus size={18} /> Crea personaggio
-      </Link>
+      <div className="flex gap-2 mb-6">
+        <Link href="/create" className="btn btn-accent flex-1 text-base py-3">
+          <Plus size={18} /> Crea personaggio
+        </Link>
+        <Link href="/manual" className="btn py-3" title="Manuale">
+          <BookOpen size={18} /> Manuale
+        </Link>
+      </div>
 
       {characters === undefined ? (
         <p className="text-[var(--muted)] text-sm">Caricamento…</p>

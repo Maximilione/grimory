@@ -7,8 +7,10 @@ import { ChevronLeft, Dices } from "lucide-react";
 import { ABILITIES, type Ability, type AbilityScores, type Feature, type InventoryItem, type SkillProf, type Weapon } from "@/lib/types";
 import { ABILITY_NAMES, CLASSES, classByKey, spellSlotsFor, featureEffects } from "@/lib/srd";
 import { abilityMod } from "@/lib/rules";
+import { evalFormula } from "@/lib/dice";
 import { createCharacter, emptyAbilities, uid } from "@/lib/db";
 import { fetchClassFeatures, classifyEquipment } from "@/lib/srdApi";
+import { lookupFeat } from "@/lib/feats2024";
 import { GuidedSetup, type GuidedResult } from "@/components/create/GuidedSetup";
 import { PixelWatermark } from "@/components/PixelArt";
 
@@ -187,12 +189,30 @@ export default function CreatePage() {
       if (guided.bgName) {
         bgName = guided.bgName;
         (guided.bgSkills ?? []).forEach((k) => (skills[k] = "prof"));
-        if (guided.bgFeat) features.push({ id: uid(), name: guided.bgFeat, source: `Background: ${guided.bgName}`, ref: guided.bgFeat });
+        if (guided.bgFeat) {
+          const fi = lookupFeat(guided.bgFeat);
+          features.push({
+            id: uid(),
+            name: guided.bgFeat,
+            source: `Background: ${guided.bgName}`,
+            description: fi?.desc,
+            ref: guided.bgFeat,
+            ...(fi?.effects ? { effects: fi.effects } : {}),
+          });
+        }
         if (guided.bgFeature) features.push({ id: uid(), name: guided.bgFeature.name, source: `Background: ${guided.bgName}`, description: guided.bgFeature.desc, ref: guided.bgFeature.name });
         toolProfs.push(...splitList(guided.bgTool));
         languages.push(...splitList(guided.bgLanguages));
       }
     }
+
+    // start at full HP including max-HP effects (e.g. Tough +2×liv)
+    const hpFromEffects = features
+      .flatMap((f) => f.effects ?? [])
+      .filter((e) => e.target === "maxHp")
+      .reduce((s, e) => {
+        try { return s + evalFormula(e.formula, { level }); } catch { return s; }
+      }, 0);
 
     const c = await createCharacter({
       name: name.trim() || "Senza nome",
@@ -218,7 +238,7 @@ export default function CreatePage() {
       armorProfs,
       weaponProfs,
       maxHp,
-      currentHp: maxHp,
+      currentHp: maxHp + hpFromEffects,
       hitDiceTotal: level,
       hitDiceSpent: 0,
     });

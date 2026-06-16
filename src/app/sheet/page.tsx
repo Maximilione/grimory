@@ -17,6 +17,7 @@ import {
   Wand2,
   ScrollText,
   FlaskConical,
+  BookOpen,
   Settings as SettingsIcon,
   ChevronRight,
 } from "lucide-react";
@@ -39,12 +40,13 @@ import { RollToast } from "@/components/sheet/RollToast";
 import { CritFx } from "@/components/sheet/CritFx";
 import { RollModeToggle } from "@/components/sheet/RollModeToggle";
 import { RollLog } from "@/components/sheet/RollLog";
+import { ManualBrowser } from "@/components/ManualBrowser";
 
 type SectionKey =
   | "overview" | "abilities" | "skills" | "proficiencies"
   | "attacks" | "weapons"
   | "spells" | "inventory" | "features"
-  | "homebrew" | "settings";
+  | "homebrew" | "manual" | "settings";
 
 const SECTIONS: Record<SectionKey, { label: string; icon: React.ReactNode; comp: React.FC<SectionProps> }> = {
   overview: { label: "Panoramica", icon: <LayoutGrid size={18} />, comp: Overview },
@@ -57,6 +59,7 @@ const SECTIONS: Record<SectionKey, { label: string; icon: React.ReactNode; comp:
   inventory: { label: "Equipaggiamento", icon: <Backpack size={18} />, comp: Inventory },
   features: { label: "Tratti & Privilegi", icon: <ScrollText size={18} />, comp: Features },
   homebrew: { label: "Homebrew", icon: <FlaskConical size={18} />, comp: Homebrew },
+  manual: { label: "Manuale", icon: <BookOpen size={18} />, comp: ManualBrowser as React.FC<SectionProps> },
   settings: { label: "Impostazioni", icon: <SettingsIcon size={18} />, comp: Settings },
 };
 
@@ -64,6 +67,7 @@ const GROUPS: { title: string; keys: SectionKey[] }[] = [
   { title: "Scheda", keys: ["overview", "abilities", "skills", "proficiencies"] },
   { title: "Combattimento", keys: ["attacks", "weapons"] },
   { title: "Risorse", keys: ["spells", "inventory", "features"] },
+  { title: "Riferimento", keys: ["manual"] },
   { title: "Personalizza", keys: ["homebrew", "settings"] },
 ];
 
