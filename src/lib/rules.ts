@@ -1,0 +1,202 @@
+// Derived-stat engine. Everything that "auto-scales with stats/level" is
+// computed here from the raw Character, so the UI only ever reads derived
+// values and never stores them. Pure functions, no side effects.
+
+import type { Ability, Character, ClassEntry, Weapon } from "./types";
+import { ABILITIES } from "./types";
+import { SKILLS, cantripScale, classByKey, exhaustionPenalty, multiclassSlots } from "./srd";
+import { evalFormula, type Vars } from "./dice";
+
+/** Normalized class list: uses classes[] when present, else the legacy single class. */
+export function getClasses(c: Character): ClassEntry[] {
+  if (c.classes && c.classes.length) return c.classes;
+  if (c.classKey) return [{ key: c.classKey, subclass: c.subclass, level: c.level }];
+  return [];
+}
+
+export function totalLevel(c: Character): number {
+  const cls = getClasses(c);
+  return cls.length ? cls.reduce((s, e) => s + e.level, 0) : c.level;
+}
+
+/** Build the spell-slot map for a character (multiclass aware, pact merged in),
+ * preserving already-spent slots. */
+export function buildSpellSlots(c: Character): Record<number, { max: number; spent: number }> {
+  const { slots, pact } = multiclassSlots(getClasses(c));
+  const merged: Record<number, number> = { ...slots };
+  if (pact) merged[pact.lvl] = (merged[pact.lvl] ?? 0) + pact.count;
+  const out: Record<number, { max: number; spent: number }> = {};
+  for (const [lvl, max] of Object.entries(merged)) {
+    out[+lvl] = { max, spent: Math.min(c.spellSlots?.[+lvl]?.spent ?? 0, max) };
+  }
+  return out;
+}
+
+export function abilityMod(score: number): number {
+  return Math.floor((score - 10) / 2);
+}
+
+export function proficiencyBonus(c: Character): number {
+  if (c.proficiencyBonusOverride) return c.proficiencyBonusOverride;
+  return Math.ceil(c.level / 4) + 1;
+}
+
+export function spellcastingAbility(c: Character): Ability | undefined {
+  if (c.spellcastingAbility) return c.spellcastingAbility;
+  // first class (in order) that can cast determines the default ability
+  for (const e of getClasses(c)) {
+    const sp = classByKey(e.key)?.spellcasting;
+    if (sp) return sp;
+  }
+  return undefined;
+}
+
+export interface Derived {
+  prof: number;
+  mods: Record<Ability, number>;
+  saves: Record<Ability, { mod: number; proficient: boolean }>;
+  skills: Record<string, { mod: number; tier: "none" | "prof" | "expert"; ability: Ability }>;
+  initiative: number;
+  passivePerception: number;
+  armorClass: number; // effective AC after feature effects
+  speed: number; // effective speed after feature effects
+  maxHp: number; // effective max HP after feature effects
+  spellMod?: number;
+  spellSaveDc?: number;
+  spellAttack?: number;
+}
+
+export function derive(c: Character): Derived {
+  const prof = proficiencyBonus(c);
+  // Exhaustion penalty applies to every d20 Test (checks/saves/attacks) and the
+  // spell save DC. mods[] stay pure (used for display & formulas); the penalty
+  // is folded into the rollable bonuses below so it propagates everywhere.
+  const exh = exhaustionPenalty(c.exhaustion ?? 0);
+  const mods = {} as Record<Ability, number>;
+  for (const a of ABILITIES) mods[a] = abilityMod(c.abilities[a]);
+
+  const saves = {} as Derived["saves"];
+  for (const a of ABILITIES) {
+    const proficient = !!c.savingThrowProf[a];
+    saves[a] = { mod: mods[a] + (proficient ? prof : 0) - exh, proficient };
+  }
+
+  const skills: Derived["skills"] = {};
+  for (const [key, def] of Object.entries(SKILLS)) {
+    const tier = c.skills[key] ?? "none";
+    const bonus = tier === "expert" ? prof * 2 : tier === "prof" ? prof : 0;
+    skills[key] = { mod: mods[def.ability] + bonus - exh, tier, ability: def.ability };
+  }
+
+  const sAbil = spellcastingAbility(c);
+  const spellMod = sAbil ? mods[sAbil] : undefined;
+
+  // Apply feature effects (e.g. Unarmored Defense). Build a local var map here
+  // rather than calling formulaVars() to avoid recursion.
+  const evars: Vars = { level: c.level, prof, pb: prof, exhaustion: c.exhaustion ?? 0 };
+  for (const a of ABILITIES) {
+    evars[a] = c.abilities[a];
+    evars[`mod.${a}`] = mods[a];
+  }
+  let ac = c.armorClass;
+  let acBonus = 0;
+  let speed = c.speed;
+  let initBonus = 0;
+  let hpBonus = 0;
+  for (const f of c.features) {
+    for (const e of f.effects ?? []) {
+      let val = 0;
+      try {
+        val = Math.round(evalFormula(e.formula, evars));
+      } catch {
+        continue;
+      }
+      if (e.target === "ac") e.mode === "base" ? (ac = Math.max(ac, val)) : (acBonus += val);
+      else if (e.target === "speed") e.mode === "base" ? (speed = Math.max(speed, val)) : (speed += val);
+      else if (e.target === "initiative") initBonus += val;
+      else if (e.target === "maxHp") hpBonus += val;
+    }
+  }
+
+  return {
+    prof,
+    mods,
+    saves,
+    skills,
+    initiative: mods.dex - exh + initBonus,
+    passivePerception: 10 + (mods[SKILLS.perception.ability] ?? 0) + (c.skills.perception === "expert" ? prof * 2 : c.skills.perception === "prof" ? prof : 0),
+    armorClass: ac + acBonus,
+    speed,
+    maxHp: c.maxHp + hpBonus,
+    spellMod,
+    spellSaveDc: spellMod !== undefined ? 8 + prof + spellMod - exh : undefined,
+    spellAttack: spellMod !== undefined ? prof + spellMod - exh : undefined,
+  };
+}
+
+/**
+ * Build the variable context used to evaluate scaling formulas. Includes every
+ * ability score & modifier, proficiency, level, spell mod, cantrip scale, and
+ * any user-defined custom vars. Homebrew formulas reference these by name,
+ * e.g. "1d8 + mod.str + ceil(level/2)" or "prof + customVars.rage".
+ */
+export function formulaVars(c: Character): Vars {
+  const d = derive(c);
+  const v: Vars = {
+    level: c.level,
+    prof: d.prof,
+    cantrip: cantripScale(c.level),
+    pb: d.prof,
+    exhaustion: c.exhaustion ?? 0,
+  };
+  for (const a of ABILITIES) {
+    v[a] = c.abilities[a];
+    v[`mod.${a}`] = d.mods[a];
+    v[`save.${a}`] = d.saves[a].mod;
+  }
+  if (d.spellMod !== undefined) {
+    v["mod.spell"] = d.spellMod;
+    v["spellDc"] = d.spellSaveDc!;
+    v["spellAtk"] = d.spellAttack!;
+  }
+  for (const [k, val] of Object.entries(c.customVars ?? {})) {
+    v[`customVars.${k}`] = val;
+    v[k] = val; // also bare name for convenience
+  }
+  return v;
+}
+
+/** Resolve the effective attack ability for a weapon (finesse => better of str/dex). */
+export function weaponAbility(c: Character, w: Weapon): Ability {
+  if (w.ability !== "auto") return w.ability;
+  const finesse = (w.properties ?? []).some((p) => /finesse/i.test(p));
+  const mods = derive(c).mods;
+  if (finesse) return mods.dex >= mods.str ? "dex" : "str";
+  const ranged = (w.properties ?? []).some((p) => /thrown|ammunition|range/i.test(p));
+  return ranged ? "dex" : "str";
+}
+
+/** Auto-computed attack bonus and damage string for a weapon, scaling with stats. */
+export function weaponAttack(
+  c: Character,
+  w: Weapon,
+): { toHit: number; damage: string; ability: Ability } {
+  const d = derive(c);
+  const abil = weaponAbility(c, w);
+  const mod = d.mods[abil];
+  const mag = w.magicBonus ?? 0;
+  const exh = exhaustionPenalty(c.exhaustion ?? 0);
+  const toHit = mod + (w.proficient ? d.prof : 0) + mag - exh;
+  const dmgBonus = mod + mag;
+  const sign = dmgBonus >= 0 ? `+ ${dmgBonus}` : `- ${Math.abs(dmgBonus)}`;
+  const damage = dmgBonus === 0 ? w.damage : `${w.damage} ${sign}`;
+  return { toHit, damage, ability: abil };
+}
+
+export function carryCapacity(c: Character): number {
+  return c.abilities.str * 15;
+}
+
+export function currentWeight(c: Character): number {
+  return c.inventory.reduce((sum, it) => sum + (it.weight ?? 0) * it.qty, 0);
+}

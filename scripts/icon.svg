@@ -1,0 +1,21 @@
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1d2029"/>
+      <stop offset="1" stop-color="#0e0f13"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- arcane rune: open book / grimoire mark -->
+  <g fill="none" stroke="#d4a24e" stroke-width="20" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M256 150 C 210 120, 150 120, 120 140 L 120 360 C 150 340, 210 340, 256 370"/>
+    <path d="M256 150 C 302 120, 362 120, 392 140 L 392 360 C 362 340, 302 340, 256 370"/>
+    <line x1="256" y1="150" x2="256" y2="370"/>
+  </g>
+  <circle cx="256" cy="100" r="16" fill="#d4a24e"/>
+  <g stroke="#d4a24e" stroke-width="10" stroke-linecap="round">
+    <line x1="256" y1="60" x2="256" y2="40"/>
+    <line x1="226" y1="74" x2="214" y2="58"/>
+    <line x1="286" y1="74" x2="298" y2="58"/>
+  </g>
+</svg>

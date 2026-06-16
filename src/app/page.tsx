@@ -1,65 +1,131 @@
-import Image from "next/image";
+"use client";
+
+import Link from "next/link";
+import { useState } from "react";
+import {
+  Plus,
+  Heart,
+  Shield,
+  ChevronRight,
+  MoreVertical,
+  Copy,
+  Trash2,
+} from "lucide-react";
+import { useCharacters } from "@/lib/useCharacters";
+import { deleteCharacter, duplicateCharacter } from "@/lib/db";
+import { classByKey } from "@/lib/srd";
+import { getClasses } from "@/lib/rules";
+import { InstallPrompt } from "@/components/InstallPrompt";
+import { BackupBar } from "@/components/BackupBar";
+import type { Character } from "@/lib/types";
 
 export default function Home() {
+  const characters = useCharacters();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <main className="mx-auto w-full max-w-2xl px-4 pb-24 pt-[max(1.5rem,env(safe-area-inset-top))]">
+      <header className="mb-6">
+        <h1 className="text-3xl font-bold tracking-tight" style={{ color: "var(--accent)" }}>
+          Grimorio
+        </h1>
+        <p className="text-[var(--muted)] text-sm mt-1">Schede personaggio · D&amp;D 5e (2024)</p>
+      </header>
+
+      <div className="mb-5">
+        <InstallPrompt />
+      </div>
+
+      <Link href="/create" className="btn btn-accent w-full mb-6 text-base py-3">
+        <Plus size={18} /> Crea personaggio
+      </Link>
+
+      {characters === undefined ? (
+        <p className="text-[var(--muted)] text-sm">Caricamento…</p>
+      ) : characters.length === 0 ? (
+        <div className="card p-8 text-center text-[var(--muted)] mb-6">
+          <p className="mb-1">Nessun personaggio ancora.</p>
+          <p className="text-sm">Crea il tuo primo eroe per iniziare.</p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+      ) : (
+        <ul className="flex flex-col gap-3 mb-8">
+          {characters.map((c) => (
+            <CharacterCard key={c.id} c={c} />
+          ))}
+        </ul>
+      )}
+
+      <BackupBar />
+    </main>
+  );
+}
+
+function CharacterCard({ c }: { c: Character }) {
+  const [menu, setMenu] = useState(false);
+  const classList = getClasses(c);
+  const cls = classList.length
+    ? classList.map((e) => `${classByKey(e.key)?.name ?? e.key} ${e.level}`).join(" / ")
+    : c.className;
+  const subtitle = [cls, `Liv. ${c.level}`, c.race]
+    .filter(Boolean)
+    .join(" · ");
+
+  return (
+    <li className="card overflow-hidden">
+      <div className="flex items-center">
+        <Link href={`/sheet?c=${c.id}`} className="flex-1 flex items-center gap-3 p-4 min-w-0">
+          <div
+            className="size-11 rounded-full grid place-items-center font-bold text-lg shrink-0"
+            style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
           >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+            {c.name.trim().charAt(0).toUpperCase() || "?"}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="font-semibold truncate">{c.name}</p>
+            <p className="text-sm text-[var(--muted)] truncate">{subtitle || "—"}</p>
+          </div>
+          <div className="flex items-center gap-3 text-sm text-[var(--muted)] shrink-0">
+            <span className="flex items-center gap-1">
+              <Heart size={14} style={{ color: "var(--ember)" }} />
+              {c.currentHp}
+            </span>
+            <span className="flex items-center gap-1">
+              <Shield size={14} />
+              {c.armorClass}
+            </span>
+            <ChevronRight size={18} />
+          </div>
+        </Link>
+        <button
+          className="px-3 self-stretch text-[var(--muted)]"
+          onClick={() => setMenu((m) => !m)}
+          aria-label="Azioni"
+        >
+          <MoreVertical size={18} />
+        </button>
+      </div>
+      {menu && (
+        <div className="flex gap-2 px-4 pb-3 pt-1 border-t border-[var(--border)]">
+          <button
+            className="btn btn-ghost text-sm"
+            onClick={async () => {
+              await duplicateCharacter(c.id);
+              setMenu(false);
+            }}
           >
-            Documentation
-          </a>
+            <Copy size={15} /> Duplica
+          </button>
+          <button
+            className="btn btn-danger btn-ghost text-sm"
+            onClick={async () => {
+              if (confirm(`Eliminare "${c.name}"? Azione irreversibile.`)) {
+                await deleteCharacter(c.id);
+              }
+            }}
+          >
+            <Trash2 size={15} /> Elimina
+          </button>
         </div>
-      </main>
-    </div>
+      )}
+    </li>
   );
 }
