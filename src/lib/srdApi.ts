@@ -112,6 +112,8 @@ function mapSpell(r: any): Omit<Spell, "id"> {
     damage: r.damage_roll || undefined,
     description: descToText(r.desc, r.higher_level),
     prepared: true,
+    ritual: !!r.ritual,
+    concentration: !!r.concentration,
     ref: r.name,
   };
 }

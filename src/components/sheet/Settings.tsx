@@ -160,6 +160,9 @@ export function Settings({ character: c, update }: SectionProps) {
           <L label="Velocità base (m)">
             <input type="number" className="field" value={c.speed} onChange={(e) => update((d) => (d.speed = +e.target.value || 0))} />
           </L>
+          <L label="Punti Esperienza (opz.)">
+            <input type="number" inputMode="numeric" className="field" value={c.xp ?? 0} onChange={(e) => update((d) => (d.xp = +e.target.value || 0))} placeholder="milestone" />
+          </L>
         </div>
         <p className="text-[11px] text-[var(--muted)]">CA e velocità in Panoramica includono gli effetti dei privilegi/talenti (es. Difesa senza Armatura, Speedy).</p>
         <button className="btn self-start" onClick={recalcSlots}>

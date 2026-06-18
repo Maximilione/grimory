@@ -15,7 +15,13 @@ export function Skills({ character: c, update }: SectionProps) {
     <div className="flex flex-col gap-3">
       <SectionHeader
         title="Abilità"
-        desc="Tocca il cerchio per ciclare: — (niente) → C (competente) → E (esperto)."
+        desc="Tocca il cerchio: — → C (competente) → E (esperto). Casella = bonus extra."
+        action={
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" className="accent-[var(--accent)] size-4" checked={!!c.jackOfAllTrades} onChange={(e) => update((d) => (d.jackOfAllTrades = e.target.checked))} />
+            Tuttofare
+          </label>
+        }
       />
       {entries.map(([key, def]) => {
         const sk = d.skills[key];
@@ -43,6 +49,13 @@ export function Skills({ character: c, update }: SectionProps) {
               <p className="text-sm font-medium truncate">{def.label}</p>
               <p className="text-[11px] uppercase text-[var(--muted)]">{ABILITY_NAMES[def.ability]}</p>
             </div>
+            <input
+              type="number"
+              className="field w-12 px-1 py-1 text-center text-xs shrink-0"
+              title="Bonus extra (oggetti)"
+              value={c.skillBonus?.[key] ?? 0}
+              onChange={(e) => update((d) => { d.skillBonus ??= {}; const v = +e.target.value || 0; if (v) d.skillBonus[key] = v; else delete d.skillBonus[key]; })}
+            />
             <RollButton label={def.label} bonus={sk.mod} />
           </div>
         );

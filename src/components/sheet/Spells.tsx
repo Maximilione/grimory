@@ -175,6 +175,8 @@ export function Spells({ character: c, update }: SectionProps) {
                 title={
                   <span className="flex items-center gap-2">
                     <span style={{ opacity: s.prepared ? 1 : 0.5 }}>{s.name}</span>
+                    {s.concentration && <Tag>C</Tag>}
+                    {s.ritual && <Tag>R</Tag>}
                     {s.homebrew && <Tag>HB</Tag>}
                   </span>
                 }
@@ -221,6 +223,14 @@ export function Spells({ character: c, update }: SectionProps) {
                     <label className="flex items-center gap-2 text-sm">
                       <input type="checkbox" className="accent-[var(--accent)] size-4" checked={!!s.prepared} onChange={(e) => edit(s.id, { prepared: e.target.checked })} />
                       Preparato
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" className="accent-[var(--accent)] size-4" checked={!!s.concentration} onChange={(e) => edit(s.id, { concentration: e.target.checked })} />
+                      Conc.
+                    </label>
+                    <label className="flex items-center gap-2 text-sm">
+                      <input type="checkbox" className="accent-[var(--accent)] size-4" checked={!!s.ritual} onChange={(e) => edit(s.id, { ritual: e.target.checked })} />
+                      Rituale
                     </label>
                     <label className="flex items-center gap-2 text-sm">
                       <input type="checkbox" className="accent-[var(--accent)] size-4" checked={!!s.homebrew} onChange={(e) => edit(s.id, { homebrew: e.target.checked })} />

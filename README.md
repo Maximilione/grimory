@@ -128,7 +128,13 @@ livelli successivi si aggiungono da sole. Il **Colpo senz'armi** del Monaco usa 
 - **Modificatori attacco custom** per arma: bonus magico (colpire+danno), **bonus colpire** e **bonus danno**
   separati (stili di combattimento, situazionali). Le azioni personalizzate usano formule complete.
 - **Personalizzazione**: ritratto/avatar (Impostazioni), colore accento, **Compagni** (mini-schede famigli/
-  evocazioni con PF), **Note & Diario**.
+  evocazioni con PF **e attacchi tirabili**), **Note & Diario**.
+- **Difese & Sensi** (sezione): resistenze / immunità / vulnerabilità / immunità a condizioni / sensi
+  (chip) + **velocità multiple** (volo/nuoto/scalata/scavo).
+- **Bonus fini**: bonus extra per singola abilità e tiro salvezza (oggetti), **Tuttofare** (mezza
+  competenza), soglie di **ingombro** (ingombrato/sovraccarico), **ispirazione multipla** (contatore).
+- **Gestione**: PE opzionali, oggetti in **sintonia** nominati (3 slot), flag **rituale/concentrazione**
+  sugli incantesimi (tag C/R, presi anche dall'API).
 - **Riposi**: breve = slot pact (warlock) + privilegi a riposo breve; lungo = PF pieni, slot,
   metà dadi vita, −1 sfinimento. Spesa dado vita per curare.
 - **Level-up + multiclasse**: scegli quale classe salire (o aggiungine una). PF medi, slot/dadi vita

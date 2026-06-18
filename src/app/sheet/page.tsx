@@ -13,6 +13,7 @@ import {
   Swords,
   Sword,
   ShieldCheck,
+  ShieldHalf,
   Backpack,
   Wand2,
   ScrollText,
@@ -44,11 +45,12 @@ import { RollModeToggle } from "@/components/sheet/RollModeToggle";
 import { RollLog } from "@/components/sheet/RollLog";
 import { ManualBrowser } from "@/components/ManualBrowser";
 import { Companions } from "@/components/sheet/Companions";
+import { Defenses } from "@/components/sheet/Defenses";
 import { Notes } from "@/components/sheet/Notes";
 
 type SectionKey =
   | "overview" | "abilities" | "skills" | "proficiencies"
-  | "attacks" | "weapons"
+  | "attacks" | "weapons" | "defenses"
   | "spells" | "inventory" | "features" | "companions"
   | "homebrew" | "manual" | "notes" | "settings";
 
@@ -59,6 +61,7 @@ const SECTIONS: Record<SectionKey, { label: string; icon: React.ReactNode; comp:
   proficiencies: { label: "Competenze & Lingue", icon: <ShieldCheck size={18} />, comp: Proficiencies },
   attacks: { label: "Attacchi", icon: <Swords size={18} />, comp: Attacks },
   weapons: { label: "Armi", icon: <Sword size={18} />, comp: Weapons },
+  defenses: { label: "Difese & Sensi", icon: <ShieldHalf size={18} />, comp: Defenses },
   spells: { label: "Incantesimi", icon: <Wand2 size={18} />, comp: Spells },
   inventory: { label: "Equipaggiamento", icon: <Backpack size={18} />, comp: Inventory },
   features: { label: "Tratti & Privilegi", icon: <ScrollText size={18} />, comp: Features },
@@ -71,7 +74,7 @@ const SECTIONS: Record<SectionKey, { label: string; icon: React.ReactNode; comp:
 
 const GROUPS: { title: string; keys: SectionKey[] }[] = [
   { title: "Scheda", keys: ["overview", "abilities", "skills", "proficiencies"] },
-  { title: "Combattimento", keys: ["attacks", "weapons"] },
+  { title: "Combattimento", keys: ["attacks", "weapons", "defenses"] },
   { title: "Risorse", keys: ["spells", "inventory", "features", "companions"] },
   { title: "Riferimento", keys: ["manual"] },
   { title: "Personalizza", keys: ["notes", "homebrew", "settings"] },

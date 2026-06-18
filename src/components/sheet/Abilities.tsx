@@ -58,6 +58,13 @@ export function Abilities({ character: c, update }: SectionProps) {
                 />
                 <span className="truncate">{ABILITY_NAMES[a]}</span>
               </label>
+              <input
+                type="number"
+                className="field w-12 px-1 py-1 text-center text-xs shrink-0"
+                title="Bonus extra TS (oggetti)"
+                value={c.saveBonus?.[a] ?? 0}
+                onChange={(e) => update((d) => { d.saveBonus ??= {}; const v = +e.target.value || 0; if (v) d.saveBonus[a] = v; else delete d.saveBonus[a]; })}
+              />
               <RollButton label={`TS ${ABILITY_NAMES[a]}`} bonus={save.mod} />
             </div>
           );

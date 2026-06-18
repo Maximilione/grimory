@@ -86,14 +86,16 @@ export function derive(c: Character): Derived {
   const saves = {} as Derived["saves"];
   for (const a of ABILITIES) {
     const proficient = !!c.savingThrowProf[a];
-    saves[a] = { mod: mods[a] + (proficient ? prof : 0) - exh, proficient };
+    saves[a] = { mod: mods[a] + (proficient ? prof : 0) + (c.saveBonus?.[a] ?? 0) - exh, proficient };
   }
 
+  const half = c.jackOfAllTrades ? Math.floor(prof / 2) : 0;
   const skills: Derived["skills"] = {};
   for (const [key, def] of Object.entries(SKILLS)) {
     const tier = c.skills[key] ?? "none";
-    const bonus = tier === "expert" ? prof * 2 : tier === "prof" ? prof : 0;
-    skills[key] = { mod: mods[def.ability] + bonus - exh, tier, ability: def.ability };
+    const profBonus = tier === "expert" ? prof * 2 : tier === "prof" ? prof : half; // Jack of all Trades on non-prof
+    const misc = c.skillBonus?.[key] ?? 0;
+    skills[key] = { mod: mods[def.ability] + profBonus + misc - exh, tier, ability: def.ability };
   }
 
   const sAbil = spellcastingAbility(c);

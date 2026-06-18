@@ -69,6 +69,8 @@ export interface Spell {
   duration?: string;
   description?: string;
   prepared?: boolean;
+  ritual?: boolean;
+  concentration?: boolean;
   /** For cantrips/scaling spells: damage formula that auto-scales (e.g. cantrip dice by level). */
   damage?: string;
   homebrew?: boolean;
@@ -137,6 +139,7 @@ export interface Companion {
   maxHp: number;
   speed?: string;
   notes?: string;
+  attacks?: { id: string; name: string; toHit?: number; damage?: string }[];
 }
 
 export interface Character {
@@ -183,8 +186,23 @@ export interface Character {
   deathSaves?: { successes: number; failures: number };
   conditions?: string[]; // active condition keys (see srd CONDITIONS)
   exhaustion?: number; // 0..6 (2024: -2 x level to d20 tests & spell DC)
-  inspiration?: boolean;
+  inspiration?: boolean; // legacy single flag
+  inspirationCount?: number; // heroic inspiration count
   concentration?: string; // name of the spell currently concentrated on ("" = none)
+  // defenses & senses
+  resistances?: string[];
+  immunities?: string[];
+  vulnerabilities?: string[];
+  conditionImmunities?: string[];
+  senses?: string[]; // e.g. "Scurovisione 18 m"
+  speeds?: { fly?: number; swim?: number; climb?: number; burrow?: number };
+  // fine-grained bonuses
+  skillBonus?: Record<string, number>; // misc bonus per skill key
+  saveBonus?: Partial<Record<Ability, number>>; // misc bonus per save
+  jackOfAllTrades?: boolean; // half proficiency to non-proficient ability checks
+  // management
+  xp?: number;
+  attunedItems?: string[]; // up to 3 attuned item names
   // wealth
   currency?: { cp: number; sp: number; ep: number; gp: number; pp: number };
   attunedCount?: number; // attunement slots in use (max 3)

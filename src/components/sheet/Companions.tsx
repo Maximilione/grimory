@@ -1,13 +1,26 @@
 "use client";
 
-import { Plus, Minus, Trash2, Heart } from "lucide-react";
+import { Plus, Minus, Trash2, Heart, Dices } from "lucide-react";
 import { uid } from "@/lib/db";
 import type { Companion } from "@/lib/types";
+import { useRoll } from "@/lib/rollStore";
 import { SectionHeader, ItemCard, Empty, type SectionProps } from "./common";
 
 /** Companions / familiars / summons — small stat blocks with HP tracking. */
 export function Companions({ character: c, update }: SectionProps) {
   const list = c.companions ?? [];
+  const roll = useRoll((s) => s.roll);
+  const rollD20 = useRoll((s) => s.rollD20);
+
+  function mutAttacks(mId: string, fn: (atks: NonNullable<Companion["attacks"]>) => void) {
+    update((d) => {
+      const m = d.companions?.find((y) => y.id === mId);
+      if (m) {
+        m.attacks ??= [];
+        fn(m.attacks);
+      }
+    });
+  }
   function add() {
     update((d) => (d.companions = [...(d.companions ?? []), { id: uid(), name: "Compagno", ac: 12, currentHp: 5, maxHp: 5 }]));
   }
@@ -56,6 +69,27 @@ export function Companions({ character: c, update }: SectionProps) {
             <L label="PF max"><input type="number" className="field" value={m.maxHp} onChange={(e) => edit(m.id, { maxHp: Math.max(1, +e.target.value || 1) })} /></L>
             <L label="Note" full><textarea className="field" rows={2} value={m.notes ?? ""} onChange={(e) => edit(m.id, { notes: e.target.value })} /></L>
           </div>
+
+          {/* attacks */}
+          <div className="mt-3 pt-3 border-t border-[var(--border)]">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] uppercase tracking-wide text-[var(--muted)]">Attacchi</span>
+              <button className="btn btn-ghost text-xs py-1" onClick={() => mutAttacks(m.id, (a) => a.unshift({ id: uid(), name: "Attacco", toHit: 0, damage: "1d6" }))}>
+                <Plus size={13} /> Attacco
+              </button>
+            </div>
+            {(m.attacks ?? []).map((atk, i) => (
+              <div key={atk.id} className="flex items-center gap-2 mb-2">
+                <input className="field py-1.5 text-sm flex-1" value={atk.name} onChange={(e) => mutAttacks(m.id, (a) => (a[i].name = e.target.value))} placeholder="Morso" />
+                <input type="number" className="field py-1.5 text-sm w-14 text-center" value={atk.toHit ?? 0} onChange={(e) => mutAttacks(m.id, (a) => (a[i].toHit = +e.target.value || 0))} title="colpire" />
+                <input className="field py-1.5 text-sm w-20 font-mono" value={atk.damage ?? ""} onChange={(e) => mutAttacks(m.id, (a) => (a[i].damage = e.target.value))} placeholder="1d6+2" />
+                <button className="btn px-2 py-1.5" title="Colpire" onClick={() => rollD20(`${m.name}: ${atk.name} — colpire`, atk.toHit ?? 0)}><Dices size={13} /></button>
+                <button className="btn px-2 py-1.5" title="Danni" disabled={!atk.damage?.trim()} onClick={() => roll(`${m.name}: ${atk.name} — danni`, atk.damage!)}>dmg</button>
+                <button className="btn btn-danger btn-ghost px-1.5" onClick={() => mutAttacks(m.id, (a) => a.splice(i, 1))}><Trash2 size={13} /></button>
+              </div>
+            ))}
+          </div>
+
           <button className="btn btn-danger btn-ghost text-sm mt-3" onClick={() => remove(m.id)}><Trash2 size={15} /> Elimina</button>
         </ItemCard>
       ))}

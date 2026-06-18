@@ -81,26 +81,36 @@ export function Inventory({ character: c, update }: SectionProps) {
             </label>
           ))}
         </div>
-        <div className="flex items-center justify-between mt-3 pt-3 border-t border-[var(--border)]">
-          <span className="text-sm font-semibold">Sintonia</span>
-          <div className="flex items-center gap-1.5">
-            {[1, 2, 3].map((n) => (
-              <button
-                key={n}
-                onClick={() => update((d) => (d.attunedCount = (d.attunedCount ?? 0) >= n ? n - 1 : n))}
-                className="size-6 rounded-full border-2"
-                style={{ borderColor: "var(--accent)", background: (c.attunedCount ?? 0) >= n ? "var(--accent)" : "transparent" }}
-                aria-label={`sintonia ${n}`}
+        <div className="mt-3 pt-3 border-t border-[var(--border)]">
+          <p className="text-sm font-semibold mb-2">Sintonia ({(c.attunedItems ?? []).filter(Boolean).length}/3)</p>
+          <div className="flex flex-col gap-2">
+            {[0, 1, 2].map((i) => (
+              <input
+                key={i}
+                className="field text-sm"
+                placeholder={`Oggetto in sintonia ${i + 1}`}
+                value={c.attunedItems?.[i] ?? ""}
+                onChange={(e) =>
+                  update((d) => {
+                    const arr = [...(d.attunedItems ?? ["", "", ""])];
+                    while (arr.length < 3) arr.push("");
+                    arr[i] = e.target.value;
+                    d.attunedItems = arr;
+                  })
+                }
               />
             ))}
-            <span className="text-xs text-[var(--muted)] ml-1">{c.attunedCount ?? 0}/3</span>
           </div>
         </div>
       </div>
 
-      {load > cap && (
-        <p className="text-sm" style={{ color: "var(--ember)" }}>Sovraccarico!</p>
-      )}
+      {(() => {
+        const str = c.abilities.str;
+        if (load > cap) return <p className="text-sm" style={{ color: "var(--ember)" }}>Oltre la capacità massima!</p>;
+        if (load > str * 10) return <p className="text-sm" style={{ color: "var(--ember)" }}>Sovraccarico (velocità −6 m, svantaggio).</p>;
+        if (load > str * 5) return <p className="text-sm" style={{ color: "var(--accent)" }}>Ingombrato (velocità −3 m).</p>;
+        return null;
+      })()}
       {c.inventory.length === 0 && <Empty>Zaino vuoto.</Empty>}
       {c.inventory.map((it) => (
         <ItemCard

@@ -46,16 +46,22 @@ export function CombatState({ character: c, update }: SectionProps) {
     <div className="flex flex-col gap-4">
       {/* inspiration + concentration row */}
       <div className="grid grid-cols-2 gap-3">
-        <button
-          className="card p-3 flex items-center gap-2 justify-center"
-          onClick={() => update((d) => (d.inspiration = !d.inspiration))}
-          style={c.inspiration ? { borderColor: "var(--accent)", background: "var(--accent-soft)" } : undefined}
-        >
-          <Sparkle size={18} style={{ color: c.inspiration ? "var(--accent)" : "var(--muted)" }} />
-          <span className="text-sm font-semibold" style={{ color: c.inspiration ? "var(--accent)" : "var(--muted)" }}>
-            Ispirazione
-          </span>
-        </button>
+        {(() => {
+          const insp = c.inspirationCount ?? (c.inspiration ? 1 : 0);
+          const set = (n: number) => update((d) => { d.inspirationCount = Math.max(0, n); d.inspiration = n > 0; });
+          return (
+            <div className="card p-3 flex items-center justify-between" style={insp > 0 ? { borderColor: "var(--accent)", background: "var(--accent-soft)" } : undefined}>
+              <span className="flex items-center gap-2 text-sm font-semibold" style={{ color: insp > 0 ? "var(--accent)" : "var(--muted)" }}>
+                <Sparkle size={16} /> Ispirazione
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button className="btn px-2 py-1" disabled={insp <= 0} onClick={() => set(insp - 1)}><Minus size={14} /></button>
+                <span className="font-bold w-5 text-center" style={{ color: insp > 0 ? "var(--accent)" : "var(--text)" }}>{insp}</span>
+                <button className="btn px-2 py-1" onClick={() => set(insp + 1)}><Plus size={14} /></button>
+              </div>
+            </div>
+          );
+        })()}
         <div className="card p-3 flex flex-col justify-center">
           <span className="text-[11px] uppercase tracking-wide text-[var(--muted)] flex items-center gap-1 mb-1">
             <Brain size={12} /> Concentrazione
