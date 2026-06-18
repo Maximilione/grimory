@@ -211,8 +211,8 @@ export function weaponAttack(
   const mod = d.mods[abil];
   const mag = w.magicBonus ?? 0;
   const exh = exhaustionPenalty(c.exhaustion ?? 0);
-  const toHit = mod + (w.proficient ? d.prof : 0) + mag - exh;
-  const dmgBonus = mod + mag;
+  const toHit = mod + (w.proficient ? d.prof : 0) + mag + (w.attackBonus ?? 0) - exh;
+  const dmgBonus = mod + mag + (w.damageBonus ?? 0);
   const sign = dmgBonus >= 0 ? `+ ${dmgBonus}` : `- ${Math.abs(dmgBonus)}`;
   const damage = dmgBonus === 0 ? w.damage : `${w.damage} ${sign}`;
   return { toHit, damage, ability: abil };

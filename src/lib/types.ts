@@ -30,8 +30,12 @@ export interface Weapon {
   /** Ability used for attack/damage; "auto" picks the better of str/dex (finesse). */
   ability: Ability | "auto";
   proficient: boolean;
-  /** Bonus to attack/damage beyond the standard, e.g. +1 weapon. */
+  /** Bonus to attack AND damage beyond the standard, e.g. +1 weapon. */
   magicBonus?: number;
+  /** Extra flat modifier to the attack roll only (fighting style, situational). */
+  attackBonus?: number;
+  /** Extra flat modifier to the damage only (e.g. Dueling, Rage). */
+  damageBonus?: number;
   properties?: string[];
   range?: string;
   /** Ammunition / thrown quantity remaining (undefined = not tracked). */

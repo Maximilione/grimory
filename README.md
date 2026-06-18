@@ -125,6 +125,8 @@ livelli successivi si aggiungono da sole. Il **Colpo senz'armi** del Monaco usa 
 - **Punteggi passivi**: Percezione, Indagare, Intuizione. **Magia del Patto** (warlock) tracciata a parte.
 - **CD/attacco incantesimi per caratteristica** (multiclasse con caster misti) + conteggio preparati.
 - **Munizioni** per arma (frecce/dardi) con contatore in Attacchi.
+- **Modificatori attacco custom** per arma: bonus magico (colpire+danno), **bonus colpire** e **bonus danno**
+  separati (stili di combattimento, situazionali). Le azioni personalizzate usano formule complete.
 - **Personalizzazione**: ritratto/avatar (Impostazioni), colore accento, **Compagni** (mini-schede famigli/
   evocazioni con PF), **Note & Diario**.
 - **Riposi**: breve = slot pact (warlock) + privilegi a riposo breve; lungo = PF pieni, slot,

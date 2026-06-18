@@ -90,8 +90,14 @@ export function Weapons({ character: c, update }: SectionProps) {
               <L label="Tipo danno">
                 <input className="field" value={w.damageType} onChange={(e) => edit(w.id, { damageType: e.target.value })} />
               </L>
-              <L label="Bonus magico">
+              <L label="Bonus magico (colpire+danno)">
                 <input type="number" className="field" value={w.magicBonus ?? 0} onChange={(e) => edit(w.id, { magicBonus: +e.target.value || 0 })} />
+              </L>
+              <L label="Bonus colpire (extra)">
+                <input type="number" className="field" value={w.attackBonus ?? 0} onChange={(e) => edit(w.id, { attackBonus: +e.target.value || 0 })} placeholder="es. +2 arciere" />
+              </L>
+              <L label="Bonus danno (extra)">
+                <input type="number" className="field" value={w.damageBonus ?? 0} onChange={(e) => edit(w.id, { damageBonus: +e.target.value || 0 })} placeholder="es. +2 duello" />
               </L>
               <L label="Gittata">
                 <input className="field" value={w.range ?? ""} onChange={(e) => edit(w.id, { range: e.target.value })} placeholder="6/18 m" />
