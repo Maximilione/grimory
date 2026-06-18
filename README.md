@@ -119,8 +119,14 @@ livelli successivi si aggiungono da sole. Il **Colpo senz'armi** del Monaco usa 
   Rispetta `prefers-reduced-motion`.
 - **Attacchi guidati**: prima il colpire, poi i danni si sbloccano; al crit i dadi raddoppiano.
   **Colpo senz'armi** sempre presente. Sottosezione **Incantesimi rapidi** (cantrip/incantesimi con danno).
-- **Stato combattimento** (Panoramica): TS morte (3/3 + roll), condizioni 2024, **sfinimento**
-  (−2×liv. ai d20 e CD, applicato dal motore), ispirazione, concentrazione + TS Costituzione.
+- **Stato combattimento** (Panoramica): TS morte (3/3 + roll, **+1 fallimento auto** se subisci danni a 0 PF),
+  condizioni 2024, **sfinimento** (−2×liv. ai d20 e CD), ispirazione, concentrazione.
+  **Concentrazione auto**: cade a 0 PF; reminder TS Costituzione quando subisci danni.
+- **Punteggi passivi**: Percezione, Indagare, Intuizione. **Magia del Patto** (warlock) tracciata a parte.
+- **CD/attacco incantesimi per caratteristica** (multiclasse con caster misti) + conteggio preparati.
+- **Munizioni** per arma (frecce/dardi) con contatore in Attacchi.
+- **Personalizzazione**: ritratto/avatar (Impostazioni), colore accento, **Compagni** (mini-schede famigli/
+  evocazioni con PF), **Note & Diario**.
 - **Riposi**: breve = slot pact (warlock) + privilegi a riposo breve; lungo = PF pieni, slot,
   metà dadi vita, −1 sfinimento. Spesa dado vita per curare.
 - **Level-up + multiclasse**: scegli quale classe salire (o aggiungine una). PF medi, slot/dadi vita
