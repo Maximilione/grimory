@@ -6,6 +6,7 @@ import { CLASSES, SKILLS, ABILITY_NAMES, classByKey, featureEffects } from "@/li
 import { abilityMod, getClasses, buildSpellSlots, derive } from "@/lib/rules";
 import { fetchClassFeatures, type ClassFeature } from "@/lib/srdApi";
 import { GENERAL_FEATS } from "@/lib/feats2024";
+import { classResources, featResources } from "@/lib/resources";
 import { uid } from "@/lib/db";
 import { ABILITIES, type Ability } from "@/lib/types";
 import type { SectionProps } from "./common";
@@ -59,6 +60,11 @@ export function LevelUpModal({ character: c, update, onClose }: SectionProps & {
       d.currentHp += avg;
       d.hitDiceTotal = d.level;
       d.spellSlots = buildSpellSlots(d);
+      // first level in this class → seed its resource pools (dedup by name)
+      if (newClassLevel === 1) {
+        for (const r of classResources(key))
+          if (!(d.resources ?? []).some((x) => x.name === r.name)) (d.resources ??= []).push(r);
+      }
       for (const f of gained) {
         if (f.isASI) continue; // surfaced as a prompt, user chooses ASI vs feat
         if (d.features.some((x) => x.name === f.name && x.source === cd?.name)) continue;
@@ -207,6 +213,8 @@ function AsiFeatPicker({ character: c, update }: SectionProps) {
         ref: feat.name,
         ...(feat.effects ? { effects: feat.effects } : {}),
       });
+      for (const r of featResources(feat.name))
+        if (!(d.resources ?? []).some((x) => x.name === r.name)) (d.resources ??= []).push(r);
     });
     setDone(`Talento: ${feat.name}${featAbil ? ` (+1 ${ABILITY_NAMES[featAbil as Ability]})` : ""}`);
   }

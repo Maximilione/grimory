@@ -8,6 +8,7 @@ import { abilityMod, derive, getClasses } from "@/lib/rules";
 import { useRoll } from "@/lib/rollStore";
 import { fmt, type SectionProps } from "./common";
 import { CombatState } from "./CombatState";
+import { Resources } from "./Resources";
 import { LevelUpModal } from "./LevelUpModal";
 import { PixelWatermark } from "@/components/PixelArt";
 
@@ -43,6 +44,9 @@ export function Overview({ character: c, update }: SectionProps) {
       draft.features.forEach((f) => {
         if (f.uses && f.uses.recharge === "short") f.uses.spent = 0;
       });
+      draft.resources?.forEach((r) => {
+        if (r.recharge === "short") r.spent = 0;
+      });
     });
   }
   function longRest() {
@@ -58,6 +62,7 @@ export function Overview({ character: c, update }: SectionProps) {
       draft.features.forEach((f) => {
         if (f.uses) f.uses.spent = 0;
       });
+      draft.resources?.forEach((r) => (r.spent = 0)); // both short & long recharge
       draft.exhaustion = Math.max(0, (draft.exhaustion ?? 0) - 1); // 2024: -1 level on long rest
     });
   }
@@ -183,6 +188,8 @@ export function Overview({ character: c, update }: SectionProps) {
       <button className="btn" onClick={() => setLevelUpOpen(true)} disabled={c.level >= 20}>
         <ChevronsUp size={16} style={{ color: "var(--accent)" }} /> Sali di livello {c.level >= 20 ? "(max)" : `(liv. ${c.level})`}
       </button>
+
+      <Resources character={c} update={update} />
 
       <CombatState character={c} update={update} />
 

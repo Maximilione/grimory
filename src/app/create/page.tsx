@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState } from "react";
 import { ChevronLeft, Dices } from "lucide-react";
-import { ABILITIES, type Ability, type AbilityScores, type Feature, type InventoryItem, type SkillProf, type Weapon } from "@/lib/types";
+import { ABILITIES, type Ability, type AbilityScores, type Feature, type InventoryItem, type SkillProf, type Weapon, type Resource } from "@/lib/types";
+import { classResources, featResources } from "@/lib/resources";
 import { ABILITY_NAMES, CLASSES, classByKey, spellSlotsFor, featureEffects } from "@/lib/srd";
 import { abilityMod } from "@/lib/rules";
 import { evalFormula } from "@/lib/dice";
@@ -139,6 +140,7 @@ export default function CreatePage() {
     const skills: SkillProf = {};
     const inventory: InventoryItem[] = [];
     const weapons: Weapon[] = [];
+    const resources: Resource[] = cls ? classResources(cls.key) : [];
     const languages: string[] = [];
     const toolProfs: string[] = [];
     const armorProfs: string[] = [];
@@ -199,6 +201,7 @@ export default function CreatePage() {
             ref: guided.bgFeat,
             ...(fi?.effects ? { effects: fi.effects } : {}),
           });
+          resources.push(...featResources(guided.bgFeat));
         }
         if (guided.bgFeature) features.push({ id: uid(), name: guided.bgFeature.name, source: `Background: ${guided.bgName}`, description: guided.bgFeature.desc, ref: guided.bgFeature.name });
         toolProfs.push(...splitList(guided.bgTool));
@@ -232,6 +235,7 @@ export default function CreatePage() {
       features,
       weapons,
       inventory,
+      resources,
       armorClass,
       languages: [...new Set(languages)],
       toolProfs: [...new Set(toolProfs)],

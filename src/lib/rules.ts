@@ -193,6 +193,18 @@ export function weaponAttack(
   return { toHit, damage, ability: abil };
 }
 
+/** Evaluate a resource's max (formula against the character's vars, else fixed). */
+export function resourceMax(c: Character, r: { max: { formula?: string; fixed?: number } }): number {
+  if (r.max.formula?.trim()) {
+    try {
+      return Math.max(0, Math.round(evalFormula(r.max.formula, formulaVars(c))));
+    } catch {
+      return r.max.fixed ?? 0;
+    }
+  }
+  return r.max.fixed ?? 0;
+}
+
 export function carryCapacity(c: Character): number {
   return c.abilities.str * 15;
 }

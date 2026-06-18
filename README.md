@@ -125,6 +125,10 @@ Wizard in 2 fasi (`src/app/create/page.tsx` + `src/components/create/GuidedSetup
 - **Incantesimi**: slot per livello (multiclasse), preparati, danno con scaling. Due modi per aggiungere:
   **Lista classe** (sfoglia la lista della tua classe filtrata per livello/nome, `fetchClassSpells`) e
   **Manuale** (ricerca su tutto l'SRD 2024). I dati spell sono cachati/offline. Quick-cast in Attacchi.
+- **Risorse** (Panoramica): contatori per Punti Focus, Punti Stregoneria, Ira, Ispirazione Bardica,
+  Incanalare Divinità, Forma Selvatica, Azione Impetuosa, Punti Fortuna (Lucky)… max con **formula
+  scalante** (`level`/`prof`/`max(1,mod.cha)`), pip o contatore, spendi/recupera, recupero a riposo
+  breve/lungo. **Auto-aggiunte** in base a classe/talento in creazione e level-up; + preset e custom.
 - **Ricchezza**: monete (mp/mo/me/ma/mr) + 3 slot di sintonia.
 - **Competenze & Lingue** (sezione dedicata): armi, armature & scudi, strumenti, lingue —
   chip editabili, popolate da classe/razza/background in creazione.

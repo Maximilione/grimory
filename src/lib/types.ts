@@ -77,6 +77,15 @@ export interface FeatureEffect {
   formula: string;
 }
 
+/** A tracked resource pool: focus/ki, sorcery points, luck points, rages, etc. */
+export interface Resource {
+  id: string;
+  name: string;
+  max: Scalable; // formula (e.g. "level", "prof", "max(1,mod.cha)") or fixed
+  spent: number;
+  recharge: "short" | "long";
+}
+
 export interface Feature {
   id: string;
   name: string;
@@ -165,6 +174,8 @@ export interface Character {
   // misc
   proficiencyBonusOverride?: number;
   notes?: string;
+  /** Tracked resource pools (focus, sorcery/luck points, rages…). */
+  resources?: Resource[];
   /** Custom global formula variables the user can define for homebrew scaling. */
   customVars?: Record<string, number>;
   createdAt: number;
