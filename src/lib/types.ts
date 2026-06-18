@@ -202,6 +202,8 @@ export interface Character {
   resources?: Resource[];
   /** Custom global formula variables the user can define for homebrew scaling. */
   customVars?: Record<string, number>;
+  /** Override the default formula of a derived stat (key → formula). Empty = default. */
+  formulaOverrides?: Record<string, string>;
   createdAt: number;
   updatedAt: number;
 }

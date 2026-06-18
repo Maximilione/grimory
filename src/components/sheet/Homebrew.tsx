@@ -2,11 +2,24 @@
 
 import { useState } from "react";
 import { Plus, Trash2, FlaskConical } from "lucide-react";
-import { formulaVars } from "@/lib/rules";
+import { formulaVars, derive, carryCapacity } from "@/lib/rules";
 import { avgExpr, validateFormula, rollExpr } from "@/lib/dice";
 import { useRoll } from "@/lib/rollStore";
-import { SectionHeader, type SectionProps } from "./common";
+import { SectionHeader, FormulaField, type SectionProps } from "./common";
 import { Resources } from "./Resources";
+
+const OVERRIDE_FIELDS: { key: string; label: string; ex: string }[] = [
+  { key: "armorClass", label: "Classe Armatura", ex: "10 + mod.dex + mod.con" },
+  { key: "initiative", label: "Iniziativa", ex: "mod.dex + prof" },
+  { key: "maxHp", label: "PF massimi", ex: "8 + level * (5 + mod.con)" },
+  { key: "speed", label: "Velocità (m)", ex: "9" },
+  { key: "spellSaveDc", label: "CD Incantesimi", ex: "8 + prof + mod.spell" },
+  { key: "spellAttack", label: "Attacco Incantesimi", ex: "prof + mod.spell" },
+  { key: "passivePerception", label: "Percezione passiva", ex: "10 + mod.wis + prof" },
+  { key: "passiveInvestigation", label: "Indagare passiva", ex: "10 + mod.int" },
+  { key: "passiveInsight", label: "Intuizione passiva", ex: "10 + mod.wis" },
+  { key: "carryCapacity", label: "Capacità di carico", ex: "str * 15" },
+];
 
 export function Homebrew({ character: c, update }: SectionProps) {
   const vars = formulaVars(c);
@@ -49,6 +62,43 @@ export function Homebrew({ character: c, update }: SectionProps) {
         title="Homebrew & Scaling"
         desc="Definisci variabili tue e usale in qualsiasi formula di danno, attacco o usi."
       />
+
+      {/* override calculation formulas */}
+      <div className="card p-4">
+        <p className="font-semibold mb-1">Override formule di calcolo</p>
+        <p className="text-xs text-[var(--muted)] mb-3">
+          Sostituisci la formula di una statistica derivata. Vuoto = calcolo standard. Valore attuale a destra.
+        </p>
+        <div className="flex flex-col gap-3">
+          {OVERRIDE_FIELDS.map((f) => {
+            const current =
+              f.key === "carryCapacity"
+                ? carryCapacity(c)
+                : (derive(c) as unknown as Record<string, number | undefined>)[f.key];
+            return (
+              <div key={f.key}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] uppercase tracking-wide text-[var(--muted)]">{f.label}</span>
+                  <span className="text-xs" style={{ color: "var(--accent)" }}>= {current ?? "—"}</span>
+                </div>
+                <FormulaField
+                  value={c.formulaOverrides?.[f.key] ?? ""}
+                  onChange={(v) =>
+                    update((d) => {
+                      d.formulaOverrides ??= {};
+                      if (!v.trim()) delete d.formulaOverrides[f.key];
+                      else d.formulaOverrides[f.key] = v;
+                    })
+                  }
+                  character={c}
+                  allowDice={false}
+                  placeholder={f.ex}
+                />
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* custom resource pools */}
       <Resources character={c} update={update} />

@@ -115,11 +115,24 @@ export function derive(c: Character): Derived {
 
   // Apply feature effects (e.g. Unarmored Defense). Build a local var map here
   // rather than calling formulaVars() to avoid recursion.
-  const evars: Vars = { level: c.level, prof, pb: prof, exhaustion: c.exhaustion ?? 0 };
+  const evars: Vars = { level: c.level, prof, pb: prof, exhaustion: c.exhaustion ?? 0, cantrip: cantripScale(c.level) };
   for (const a of ABILITIES) {
     evars[a] = c.abilities[a];
     evars[`mod.${a}`] = mods[a];
   }
+  if (spellMod !== undefined) evars["mod.spell"] = spellMod;
+  /** Use a custom formula override for a derived stat if set+valid, else default. */
+  const ov = (key: string, def: number): number => {
+    const f = c.formulaOverrides?.[key];
+    if (f && f.trim()) {
+      try {
+        return Math.round(evalFormula(f, evars));
+      } catch {
+        /* fall back to default */
+      }
+    }
+    return def;
+  };
   let ac = c.armorClass;
   let acBonus = 0;
   let speed = c.speed;
@@ -145,16 +158,22 @@ export function derive(c: Character): Derived {
     mods,
     saves,
     skills,
-    initiative: mods.dex - exh + initBonus,
-    passivePerception: 10 + skills.perception.mod + exh,
-    passiveInvestigation: 10 + skills.investigation.mod + exh,
-    passiveInsight: 10 + skills.insight.mod + exh,
-    armorClass: ac + acBonus,
-    speed,
-    maxHp: c.maxHp + hpBonus + (c.maxHpBonus ?? 0),
+    initiative: ov("initiative", mods.dex - exh + initBonus),
+    passivePerception: ov("passivePerception", 10 + skills.perception.mod + exh),
+    passiveInvestigation: ov("passiveInvestigation", 10 + skills.investigation.mod + exh),
+    passiveInsight: ov("passiveInsight", 10 + skills.insight.mod + exh),
+    armorClass: ov("armorClass", ac + acBonus),
+    speed: ov("speed", speed),
+    maxHp: ov("maxHp", c.maxHp + hpBonus + (c.maxHpBonus ?? 0)),
     spellMod,
-    spellSaveDc: spellMod !== undefined ? 8 + prof + spellMod - exh : undefined,
-    spellAttack: spellMod !== undefined ? prof + spellMod - exh : undefined,
+    spellSaveDc:
+      c.formulaOverrides?.spellSaveDc?.trim() || spellMod !== undefined
+        ? ov("spellSaveDc", spellMod !== undefined ? 8 + prof + spellMod - exh : 0)
+        : undefined,
+    spellAttack:
+      c.formulaOverrides?.spellAttack?.trim() || spellMod !== undefined
+        ? ov("spellAttack", spellMod !== undefined ? prof + spellMod - exh : 0)
+        : undefined,
     spellcasters,
   };
 }
@@ -231,6 +250,14 @@ export function resourceMax(c: Character, r: { max: { formula?: string; fixed?: 
 }
 
 export function carryCapacity(c: Character): number {
+  const f = c.formulaOverrides?.carryCapacity;
+  if (f && f.trim()) {
+    try {
+      return Math.round(evalFormula(f, formulaVars(c)));
+    } catch {
+      /* default */
+    }
+  }
   return c.abilities.str * 15;
 }
 

@@ -156,8 +156,10 @@ Variabili: `level`, `prof`/`pb`, `cantrip`, `exhaustion`, `mod.str…mod.cha`, `
 
 Esempi: `1d8 + mod.str + prof` · `2d6 + mod.dex + ceil(level/2)` · `cantrip*1d10 + mod.spell`.
 
-Nella sezione **Homebrew** puoi gestire le **risorse** custom e un **modificatore PF massimi** (anche
-negativo).
+Nella sezione **Homebrew** puoi gestire le **risorse** custom, un **modificatore PF massimi** (anche
+negativo) e gli **override delle formule di calcolo**: sostituisci la formula di CA, iniziativa, PF max,
+velocità, CD/attacco incantesimi, punteggi passivi e capacità di carico (vuoto = standard; mostra il
+valore attuale). Le formule usano le stesse variabili (`level`, `prof`, `mod.*`, `mod.spell`, `cantrip`…).
 
 **Effetti privilegi** (`Feature.effects`, sezione Tratti): target CA / velocità / iniziativa / PF max,
 modo `add` (+) o `base` (= max, per la CA senza armatura). La CA in Panoramica è derivata. Anteprima
