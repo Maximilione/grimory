@@ -3,7 +3,9 @@
 // Data lives in IndexedDB, not here — this only makes the UI load offline.
 
 const CACHE = "grimorio-v1";
-const APP_SHELL = ["/", "/create", "/sheet", "/manifest.webmanifest"];
+// Base path derived from where the SW is served (root or /<repo>/ on GitHub Pages).
+const BASE = self.location.pathname.replace(/\/sw\.js$/, "");
+const APP_SHELL = [`${BASE}/`, `${BASE}/create/`, `${BASE}/sheet/`, `${BASE}/manual/`];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
@@ -37,7 +39,7 @@ self.addEventListener("fetch", (event) => {
           caches.open(CACHE).then((c) => c.put(req, copy));
           return res;
         })
-        .catch(() => caches.match(req).then((r) => r || caches.match("/"))),
+        .catch(() => caches.match(req).then((r) => r || caches.match(`${BASE}/`))),
     );
     return;
   }

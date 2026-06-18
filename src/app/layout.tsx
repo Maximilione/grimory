@@ -9,15 +9,17 @@ const geistSans = Geist({
   subsets: ["latin"],
 });
 
+const base = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 export const metadata: Metadata = {
   title: "Grimorio — Schede GDR",
   description: "Gestione schede personaggio D&D 5e 2024, offline e local-first.",
   icons: {
     icon: [
-      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: `${base}/icon-192.png`, sizes: "192x192", type: "image/png" },
+      { url: `${base}/icon-512.png`, sizes: "512x512", type: "image/png" },
     ],
-    apple: "/apple-icon.png",
+    apple: `${base}/apple-icon.png`,
   },
   appleWebApp: {
     capable: true,

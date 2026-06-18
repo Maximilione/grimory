@@ -16,6 +16,28 @@ Funziona offline. **I dati vivono sul dispositivo** (IndexedDB) + backup automat
 Output build = 100% statico → deployabile su qualsiasi host statico (Vercel/Netlify/…).
 Serve un **URL fisso HTTPS** perché il party installi e i dati persistano.
 
+## Deploy su GitHub Pages (gratis)
+
+L'app è esportata staticamente (`output: 'export'`) e c'è un workflow GitHub Actions
+(`.github/workflows/deploy.yml`) che builda e pubblica da solo. Il base path è automatico:
+repo `tuonome.github.io` → root; repo di progetto → `/<nome-repo>/`.
+
+1. Crea un repo su GitHub e fai push del progetto:
+   ```bash
+   git add -A && git commit -m "Grimorio"
+   git branch -M main
+   git remote add origin https://github.com/<TUONOME>/<REPO>.git
+   git push -u origin main
+   ```
+2. Su GitHub: **Settings › Pages › Build and deployment › Source = GitHub Actions**.
+3. Ogni push su `main` builda e pubblica. URL finale:
+   - repo `tuonome.github.io` → `https://tuonome.github.io/`
+   - repo `grimorio` → `https://tuonome.github.io/grimorio/`
+4. Apri l'URL sul telefono → "Aggiungi a Home" (installa la PWA). HTTPS è automatico.
+
+> Build manuale in locale: `yarn build` genera la cartella `out/` (per repo di progetto:
+> `NEXT_PUBLIC_BASE_PATH=/<repo> yarn build`).
+
 ## Comandi (Yarn)
 
 ```bash

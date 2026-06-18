@@ -7,7 +7,8 @@ export function ServiceWorker() {
   useEffect(() => {
     if (process.env.NODE_ENV !== "production") return; // avoid caching dev assets
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+      const base = process.env.NEXT_PUBLIC_BASE_PATH || "";
+      navigator.serviceWorker.register(`${base}/sw.js`, { scope: `${base}/` }).catch(() => {});
     }
   }, []);
   return null;
