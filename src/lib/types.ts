@@ -173,6 +173,8 @@ export interface Character {
   toolProfs?: string[];
   // misc
   proficiencyBonusOverride?: number;
+  /** Custom flat modifier to max HP (can be negative). Editable in Homebrew. */
+  maxHpBonus?: number;
   notes?: string;
   /** Tracked resource pools (focus, sorcery/luck points, rages…). */
   resources?: Resource[];

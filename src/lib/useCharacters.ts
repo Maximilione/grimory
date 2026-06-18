@@ -14,8 +14,10 @@ export function useCharacters(): Character[] | undefined {
 
 /** Live single character + an updater that persists + auto-backs-up. */
 export function useCharacter(id: string | null) {
+  // `undefined` = still loading; `null` = looked up and not found (avoids an
+  // infinite "loading" spinner for stale/old links).
   const character = useLiveQuery(
-    () => (id ? db.characters.get(id) : undefined),
+    async () => (id ? (await db.characters.get(id)) ?? null : null),
     [id],
   );
 

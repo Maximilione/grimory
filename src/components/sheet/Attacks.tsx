@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Plus, Trash2, Swords, Dices, RotateCcw, Wand2 } from "lucide-react";
 import { uid } from "@/lib/db";
-import { weaponAttack, formulaVars, derive } from "@/lib/rules";
+import { weaponAttack, formulaVars, derive, getClasses } from "@/lib/rules";
 import { evalFormula, critDice } from "@/lib/dice";
 import { useRoll } from "@/lib/rollStore";
 import type { Attack, Ability, Character } from "@/lib/types";
@@ -67,14 +67,23 @@ export function Attacks({ character: c, update }: SectionProps) {
         <span className="text-xs uppercase tracking-wide text-[var(--muted)] flex items-center gap-1.5">
           <Swords size={13} /> Armi
         </span>
-        {/* Unarmed Strike — every creature always has it */}
-        <AttackRow
-          character={c}
-          name="Colpo senz'armi"
-          meta="contundenti"
-          toHit={d.mods.str + d.prof}
-          damageExpr="1 + mod.str"
-        />
+        {/* Unarmed Strike — always present; Monks use Martial Arts die + best of STR/DEX */}
+        {(() => {
+          const monk = getClasses(c).find((e) => e.key === "monk");
+          const useDex = monk && d.mods.dex > d.mods.str;
+          const abil: "str" | "dex" = useDex ? "dex" : "str";
+          const die = monk ? (monk.level >= 17 ? 12 : monk.level >= 11 ? 10 : monk.level >= 5 ? 8 : 6) : 0;
+          const dmg = monk ? `1d${die} + mod.${abil}` : `1 + mod.str`;
+          return (
+            <AttackRow
+              character={c}
+              name="Colpo senz'armi"
+              meta={monk ? `1d${die} · contundenti` : "contundenti"}
+              toHit={d.mods[abil] + d.prof}
+              damageExpr={dmg}
+            />
+          );
+        })()}
         {c.weapons.map((w) => {
           const atk = weaponAttack(c, w);
           return (

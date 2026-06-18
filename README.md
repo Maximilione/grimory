@@ -103,7 +103,12 @@ Wizard in 2 fasi (`src/app/create/page.tsx` + `src/components/create/GuidedSetup
      lingue e **+2/+1** 2024 (lo scegli tu).
    - **Equipaggiamento base** (opzionale): classe + background, scelte a/b + fissi. **Classificato**
      (`classifyEquipment`): armi → sezione Armi (tirabili), armatura → **CA** (+2 scudo), resto → inventario.
-   - I **privilegi di classe per ogni livello fino al tuo** vengono aggiunti in automatico.
+   - I **privilegi di classe e di sottoclasse per ogni livello fino al tuo** vengono aggiunti in automatico.
+
+Al **level-up** che concede la sottoclasse (di solito liv. 3) compare un **selettore sottoclasse**
+(2024 + archetypi 2014); scegliendola vengono aggiunte le sue feature. Le feature di sottoclasse ai
+livelli successivi si aggiungono da sole. Il **Colpo senz'armi** del Monaco usa il dado arti marziali
+(1d6→1d12 per livello) e il migliore tra Forza/Destrezza.
 
 ## Funzionalità di gioco
 
@@ -142,6 +147,9 @@ Variabili: `level`, `prof`/`pb`, `cantrip`, `exhaustion`, `mod.str…mod.cha`, `
 `mod.spell`, `spellDc`, `spellAtk`, ogni punteggio, e le tue variabili custom (`nome` / `customVars.nome`).
 
 Esempi: `1d8 + mod.str + prof` · `2d6 + mod.dex + ceil(level/2)` · `cantrip*1d10 + mod.spell`.
+
+Nella sezione **Homebrew** puoi gestire le **risorse** custom e un **modificatore PF massimi** (anche
+negativo).
 
 **Effetti privilegi** (`Feature.effects`, sezione Tratti): target CA / velocità / iniziativa / PF max,
 modo `add` (+) o `base` (= max, per la CA senza armatura). La CA in Panoramica è derivata. Anteprima

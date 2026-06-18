@@ -4,7 +4,7 @@ import { useState } from "react";
 import { X, ChevronsUp, Plus, Sparkles, Loader2, Star, Award } from "lucide-react";
 import { CLASSES, SKILLS, ABILITY_NAMES, classByKey, featureEffects } from "@/lib/srd";
 import { abilityMod, getClasses, buildSpellSlots, derive } from "@/lib/rules";
-import { fetchClassFeatures, type ClassFeature } from "@/lib/srdApi";
+import { fetchClassFeatures, fetchClassBuild, type ClassFeature } from "@/lib/srdApi";
 import { GENERAL_FEATS } from "@/lib/feats2024";
 import { classResources, featResources } from "@/lib/resources";
 import { uid } from "@/lib/db";
@@ -22,9 +22,12 @@ export function LevelUpModal({ character: c, update, onClose }: SectionProps & {
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<{
     className: string;
+    classKey: string;
     classLevel: number;
     gained: ClassFeature[];
     asi: boolean;
+    needsSubclass: boolean;
+    subclasses: { key: string; name: string; edition: "2024" | "2014" }[];
   } | null>(null);
 
   const takenKeys = new Set(classes.map((e) => e.key));
@@ -35,7 +38,7 @@ export function LevelUpModal({ character: c, update, onClose }: SectionProps & {
     if (busy || atCap) return;
     setBusy(true);
     const cd = classByKey(key);
-    const features = await fetchClassFeatures(key);
+    const [features, build] = await Promise.all([fetchClassFeatures(key), fetchClassBuild(key)]);
 
     const next = classes.map((e) => ({ ...e }));
     let entry = next.find((e) => e.key === key);
@@ -48,8 +51,16 @@ export function LevelUpModal({ character: c, update, onClose }: SectionProps & {
     const die = cd?.hitDie ?? 8;
     const conMod = abilityMod(c.abilities.con);
     const avg = Math.max(1, Math.floor(die / 2) + 1 + conMod);
-    const gained = features[newClassLevel] ?? [];
+
+    // class features + (if a subclass is already chosen) its features for this level
+    let gained = [...(features[newClassLevel] ?? [])];
+    if (entry.subclass) {
+      const subMap = await fetchClassFeatures(entry.subclass);
+      gained = [...gained, ...(subMap[newClassLevel] ?? [])];
+    }
     const asi = gained.some((f) => f.isASI);
+    const needsSubclass =
+      !entry.subclass && newClassLevel >= build.subclassLevel && build.subclasses.length > 0;
 
     await update((d) => {
       d.classes = next;
@@ -79,7 +90,15 @@ export function LevelUpModal({ character: c, update, onClose }: SectionProps & {
       }
     });
 
-    setResult({ className: cd?.name ?? key, classLevel: newClassLevel, gained, asi });
+    setResult({
+      className: cd?.name ?? key,
+      classKey: key,
+      classLevel: newClassLevel,
+      gained,
+      asi,
+      needsSubclass,
+      subclasses: build.subclasses,
+    });
     setBusy(false);
   }
 
@@ -110,6 +129,15 @@ export function LevelUpModal({ character: c, update, onClose }: SectionProps & {
               <p className="text-sm">
                 <strong>{result.className}</strong> ora a livello {result.classLevel} · personaggio livello {c.level}.
               </p>
+              {result.needsSubclass && (
+                <SubclassPicker
+                  character={c}
+                  update={update}
+                  classKey={result.classKey}
+                  classLevel={result.classLevel}
+                  subclasses={result.subclasses}
+                />
+              )}
               {result.asi && <AsiFeatPicker character={c} update={update} />}
               {result.gained.some((f) => /expertise|competenza/i.test(f.name)) && (
                 <ExpertisePicker character={c} update={update} />
@@ -177,6 +205,77 @@ export function LevelUpModal({ character: c, update, onClose }: SectionProps & {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Subclass choice at the level the class grants it: pick a subclass and pull
+ * its features (the subclass is its own SRD entry, keyed by class level). */
+function SubclassPicker({
+  character: c,
+  update,
+  classKey,
+  classLevel,
+  subclasses,
+}: SectionProps & {
+  classKey: string;
+  classLevel: number;
+  subclasses: { key: string; name: string; edition: "2024" | "2014" }[];
+}) {
+  const [sel, setSel] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState<string | null>(null);
+
+  async function apply() {
+    if (!sel) return;
+    setBusy(true);
+    const subMap = await fetchClassFeatures(sel); // 2024 subclasses have features; 2014 → {}
+    await update((d) => {
+      const entry = (d.classes ?? []).find((e) => e.key === classKey);
+      if (entry) entry.subclass = sel;
+      if (d.classKey === classKey) d.subclass = sel;
+      const seen = new Set(d.features.map((f) => f.name));
+      for (let l = 1; l <= classLevel; l++)
+        for (const f of subMap[l] ?? []) {
+          if (f.isASI || seen.has(f.name)) continue;
+          seen.add(f.name);
+          d.features.unshift({ id: uid(), name: f.name, source: `Sottoclasse (${sel})`, description: f.desc });
+        }
+    });
+    setDone(sel);
+    setBusy(false);
+  }
+
+  if (done)
+    return (
+      <div className="card p-3" style={{ borderColor: "var(--good)" }}>
+        <p className="text-sm" style={{ color: "var(--good)" }}>✓ Sottoclasse: {done}</p>
+      </div>
+    );
+
+  return (
+    <div className="card p-3 flex flex-col gap-2" style={{ borderColor: "var(--accent)" }}>
+      <p className="font-semibold flex items-center gap-2" style={{ color: "var(--accent)" }}>
+        <Star size={15} /> Scegli la sottoclasse
+      </p>
+      <select className="field" value={sel} onChange={(e) => setSel(e.target.value)}>
+        <option value="">— scegli —</option>
+        <optgroup label="2024 (SRD 5.5)">
+          {subclasses.filter((s) => s.edition === "2024").map((s) => (
+            <option key={s.key} value={s.name}>{s.name}</option>
+          ))}
+        </optgroup>
+        {subclasses.some((s) => s.edition === "2014") && (
+          <optgroup label="2014 classiche (adattate)">
+            {subclasses.filter((s) => s.edition === "2014").map((s) => (
+              <option key={s.key} value={s.name}>{s.name}</option>
+            ))}
+          </optgroup>
+        )}
+      </select>
+      <button className="btn btn-accent text-sm self-start" disabled={!sel || busy} onClick={apply}>
+        {busy ? "Applico…" : "Conferma sottoclasse"}
+      </button>
     </div>
   );
 }

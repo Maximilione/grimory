@@ -166,6 +166,17 @@ export default function CreatePage() {
           features.push({ id: uid(), name: f.name, source: cls.name, description: f.desc, ...(effects.length ? { effects } : {}) });
         }
       }
+      // subclass features (the subclass is its own SRD entry, features keyed by class level)
+      if (subclass) {
+        const subMap = await fetchClassFeatures(subclass);
+        for (let l = 1; l <= level; l++) {
+          for (const f of subMap[l] ?? []) {
+            if (f.isASI || seen.has(f.name)) continue;
+            seen.add(f.name);
+            features.push({ id: uid(), name: f.name, source: `${cls.name} (${subclass})`, description: f.desc });
+          }
+        }
+      }
       // resolve starting equipment into usable weapons / AC / inventory
       if (guided.equipItems?.length) {
         const cls2 = await classifyEquipment(guided.equipItems, abilityMod(finalAbilities.dex));

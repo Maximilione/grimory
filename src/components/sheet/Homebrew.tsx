@@ -6,6 +6,7 @@ import { formulaVars } from "@/lib/rules";
 import { avgExpr, validateFormula, rollExpr } from "@/lib/dice";
 import { useRoll } from "@/lib/rollStore";
 import { SectionHeader, type SectionProps } from "./common";
+import { Resources } from "./Resources";
 
 export function Homebrew({ character: c, update }: SectionProps) {
   const vars = formulaVars(c);
@@ -48,6 +49,24 @@ export function Homebrew({ character: c, update }: SectionProps) {
         title="Homebrew & Scaling"
         desc="Definisci variabili tue e usale in qualsiasi formula di danno, attacco o usi."
       />
+
+      {/* custom resource pools */}
+      <Resources character={c} update={update} />
+
+      {/* custom max-HP modifier (can be negative) */}
+      <div className="card p-4">
+        <p className="font-semibold mb-1">Modificatore PF massimi</p>
+        <p className="text-xs text-[var(--muted)] mb-3">
+          Valore fisso aggiunto (o sottratto) ai PF massimi. Usalo per bonus/malus homebrew.
+        </p>
+        <input
+          type="number"
+          inputMode="numeric"
+          className="field w-32 text-center"
+          value={c.maxHpBonus ?? 0}
+          onChange={(e) => update((d) => (d.maxHpBonus = +e.target.value || 0))}
+        />
+      </div>
 
       {/* Custom vars */}
       <div className="card p-4">

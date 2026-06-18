@@ -127,7 +127,7 @@ export function derive(c: Character): Derived {
     passivePerception: 10 + (mods[SKILLS.perception.ability] ?? 0) + (c.skills.perception === "expert" ? prof * 2 : c.skills.perception === "prof" ? prof : 0),
     armorClass: ac + acBonus,
     speed,
-    maxHp: c.maxHp + hpBonus,
+    maxHp: c.maxHp + hpBonus + (c.maxHpBonus ?? 0),
     spellMod,
     spellSaveDc: spellMod !== undefined ? 8 + prof + spellMod - exh : undefined,
     spellAttack: spellMod !== undefined ? prof + spellMod - exh : undefined,
