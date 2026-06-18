@@ -1,7 +1,8 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Trash2, RefreshCw } from "lucide-react";
+import { useRef } from "react";
+import { Trash2, RefreshCw, ImagePlus } from "lucide-react";
 import { CLASSES, ABILITY_NAMES, classByKey } from "@/lib/srd";
 import { deleteCharacter } from "@/lib/db";
 import { getClasses, buildSpellSlots, totalLevel } from "@/lib/rules";
@@ -11,6 +12,31 @@ import { SectionHeader, type SectionProps } from "./common";
 export function Settings({ character: c, update }: SectionProps) {
   const router = useRouter();
   const classes = getClasses(c);
+  const avatarRef = useRef<HTMLInputElement>(null);
+
+  function onAvatar(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        // downscale to a small square data-URL so it fits comfortably in IndexedDB
+        const S = 256;
+        const cv = document.createElement("canvas");
+        cv.width = S;
+        cv.height = S;
+        const ctx = cv.getContext("2d");
+        if (!ctx) return;
+        const side = Math.min(img.width, img.height);
+        ctx.drawImage(img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, S, S);
+        update((d) => (d.avatar = cv.toDataURL("image/jpeg", 0.8)));
+      };
+      img.src = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  }
 
   function recalcSlots() {
     update((d) => {
@@ -44,6 +70,31 @@ export function Settings({ character: c, update }: SectionProps) {
       <SectionHeader title="Impostazioni personaggio" />
 
       <div className="card p-4 flex flex-col gap-3">
+        {/* avatar + accent */}
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => avatarRef.current?.click()}
+            className="size-16 rounded-full grid place-items-center shrink-0 overflow-hidden border"
+            style={{ borderColor: "var(--border)", background: "var(--surface-2)" }}
+            aria-label="Cambia ritratto"
+          >
+            {c.avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={c.avatar} alt="" className="size-full object-cover" />
+            ) : (
+              <ImagePlus size={22} className="text-[var(--muted)]" />
+            )}
+          </button>
+          <input ref={avatarRef} type="file" accept="image/*" hidden onChange={onAvatar} />
+          <div className="flex-1">
+            <p className="text-[11px] uppercase tracking-wide text-[var(--muted)] mb-1">Colore accento</p>
+            <div className="flex items-center gap-2">
+              <input type="color" value={c.accent ?? "#d4a24e"} onChange={(e) => update((d) => (d.accent = e.target.value))} className="size-9 rounded bg-transparent border border-[var(--border)]" />
+              {c.accent && <button className="btn btn-ghost text-xs py-1" onClick={() => update((d) => (d.accent = undefined))}>Reset</button>}
+              {c.avatar && <button className="btn btn-ghost text-xs py-1" onClick={() => update((d) => (d.avatar = undefined))}>Rimuovi foto</button>}
+            </div>
+          </div>
+        </div>
         <L label="Nome">
           <input className="field" value={c.name} onChange={(e) => update((d) => (d.name = e.target.value))} />
         </L>

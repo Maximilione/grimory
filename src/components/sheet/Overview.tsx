@@ -17,12 +17,15 @@ export function Overview({ character: c, update }: SectionProps) {
   const rollD20 = useRoll((s) => s.rollD20);
   const roll = useRoll((s) => s.roll);
   const [levelUpOpen, setLevelUpOpen] = useState(false);
+  const [concCheck, setConcCheck] = useState(false);
   // hit-die healing uses the die of the class with the most levels (best effort)
   const cls = getClasses(c).slice().sort((a, b) => b.level - a.level)[0]
     ? classByKey(getClasses(c).slice().sort((a, b) => b.level - a.level)[0].key)
     : classByKey(c.classKey);
 
   function hp(delta: number) {
+    const damaging = delta < 0;
+    const wasAt0 = c.currentHp === 0;
     update((draft) => {
       let dmg = -delta;
       if (dmg > 0 && draft.tempHp > 0) {
@@ -30,17 +33,24 @@ export function Overview({ character: c, update }: SectionProps) {
         draft.tempHp -= fromTemp;
         dmg -= fromTemp;
       }
-      draft.currentHp = Math.max(0, Math.min(draft.maxHp, draft.currentHp - dmg));
+      const before = draft.currentHp;
+      draft.currentHp = Math.max(0, Math.min(d.maxHp, draft.currentHp - dmg));
+      // damaged while already at 0 HP → a failed death save (2024)
+      if (damaging && dmg > 0 && before === 0) {
+        draft.deathSaves ??= { successes: 0, failures: 0 };
+        draft.deathSaves.failures = Math.min(3, draft.deathSaves.failures + 1);
+      }
+      // dropping to 0 ends concentration
+      if (draft.currentHp === 0) draft.concentration = "";
     });
+    // concentration check reminder when taking damage while concentrating
+    if (damaging && !wasAt0 && c.concentration?.trim()) setConcCheck(true);
   }
 
   function shortRest() {
     update((draft) => {
       // Only pact-magic (warlock) slots and short-rest features recharge.
-      if (classByKey(draft.classKey)?.casterType === "pact") {
-        const slots = draft.spellSlots ?? {};
-        for (const k of Object.keys(slots)) slots[+k].spent = 0;
-      }
+      draft.pactSpent = 0; // Pact Magic recharges on a short rest
       draft.features.forEach((f) => {
         if (f.uses && f.uses.recharge === "short") f.uses.spent = 0;
       });
@@ -59,6 +69,7 @@ export function Overview({ character: c, update }: SectionProps) {
       draft.hitDiceSpent = Math.max(0, (draft.hitDiceSpent ?? 0) - recovered);
       const slots = draft.spellSlots ?? {};
       for (const k of Object.keys(slots)) slots[+k].spent = 0;
+      draft.pactSpent = 0;
       draft.features.forEach((f) => {
         if (f.uses) f.uses.spent = 0;
       });
@@ -119,6 +130,18 @@ export function Overview({ character: c, update }: SectionProps) {
         </div>
       </div>
 
+      {concCheck && c.concentration?.trim() && (
+        <div className="card p-3 flex items-center gap-2" style={{ borderColor: "var(--ember)" }}>
+          <span className="text-sm flex-1">
+            Danno mentre concentri su <strong>{c.concentration}</strong> → TS Costituzione (CD 10 o metà danni).
+          </span>
+          <button className="btn px-2.5 py-1.5 text-sm" onClick={() => { rollD20("TS Concentrazione (Cost.)", d.saves.con.mod); setConcCheck(false); }}>
+            <Dices size={14} /> TS
+          </button>
+          <button className="text-[var(--muted)] px-1" onClick={() => setConcCheck(false)} aria-label="Chiudi">✕</button>
+        </div>
+      )}
+
       {/* combat quick stats */}
       <div className="grid grid-cols-3 gap-3">
         <div className="stat-box justify-center">
@@ -146,9 +169,8 @@ export function Overview({ character: c, update }: SectionProps) {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-3 text-center">
+      <div className="grid grid-cols-2 gap-3 text-center">
         <MiniStat label="Competenza" value={fmt(d.prof)} />
-        <MiniStat label="Perc. passiva" value={String(d.passivePerception)} />
         <button className="stat-box py-2.5" onClick={spendHitDie} title="Spendi un dado vita per curare">
           <PixelWatermark name="dice" opacity={0.1} />
           <span className="text-[11px] uppercase tracking-wide text-[var(--muted)]">Dadi Vita</span>
@@ -164,6 +186,13 @@ export function Overview({ character: c, update }: SectionProps) {
           <MiniStat label="Tiro Incantesimo" value={fmt(d.spellAttack!)} art="spell" />
         </div>
       )}
+
+      {/* passive scores */}
+      <div className="grid grid-cols-3 gap-3 text-center">
+        <MiniStat label="Perc. passiva" value={String(d.passivePerception)} />
+        <MiniStat label="Indag. passiva" value={String(d.passiveInvestigation)} />
+        <MiniStat label="Intuiz. passiva" value={String(d.passiveInsight)} />
+      </div>
 
       {/* ability mods quick row */}
       <div className="grid grid-cols-6 gap-2">

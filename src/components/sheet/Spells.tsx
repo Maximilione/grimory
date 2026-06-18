@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Plus, Trash2, BookOpen, Wand2 } from "lucide-react";
 import { uid } from "@/lib/db";
-import { derive, getClasses } from "@/lib/rules";
+import { derive, getClasses, pactMagic } from "@/lib/rules";
 import { classByKey } from "@/lib/srd";
 import type { Spell } from "@/lib/types";
 import { searchSpells, withId } from "@/lib/srdApi";
@@ -71,9 +71,11 @@ export function Spells({ character: c, update }: SectionProps) {
       <SectionHeader
         title="Incantesimi"
         desc={
-          d.spellSaveDc !== undefined
-            ? `CD ${d.spellSaveDc} · Attacco ${d.spellAttack! >= 0 ? "+" : ""}${d.spellAttack}`
-            : "Imposta la caratteristica da incantatore nelle Impostazioni."
+          d.spellcasters.length === 0
+            ? "Imposta la caratteristica da incantatore nelle Impostazioni."
+            : d.spellcasters.length === 1
+              ? `CD ${d.spellcasters[0].dc} · Attacco ${d.spellcasters[0].attack >= 0 ? "+" : ""}${d.spellcasters[0].attack}`
+              : d.spellcasters.map((s) => `${s.ability.toUpperCase()} CD ${s.dc}/${s.attack >= 0 ? "+" : ""}${s.attack}`).join(" · ")
         }
         action={
           <div className="flex gap-2">
@@ -104,6 +106,44 @@ export function Spells({ character: c, update }: SectionProps) {
           onClose={() => setClassList(false)}
         />
       )}
+
+      {casterKeys.length > 0 && (() => {
+        const prepared = c.spells.filter((s) => s.level > 0 && s.prepared).length;
+        const cantrips = c.spells.filter((s) => s.level === 0).length;
+        return (
+          <p className="text-xs text-[var(--muted)] -mt-2">
+            Trucchetti: {cantrips} · Incantesimi preparati: <strong style={{ color: "var(--accent)" }}>{prepared}</strong>
+          </p>
+        );
+      })()}
+
+      {(() => {
+        const pact = pactMagic(c);
+        if (!pact) return null;
+        const spent = c.pactSpent ?? 0;
+        return (
+          <div className="card p-3 flex items-center justify-between" style={{ borderColor: "var(--accent-soft)" }}>
+            <div>
+              <p className="text-sm font-bold">Magia del Patto</p>
+              <p className="text-[11px] text-[var(--muted)]">slot di livello {pact.slotLevel} · riposo breve</p>
+            </div>
+            <div className="flex items-center gap-1.5">
+              {Array.from({ length: pact.max }, (_, i) => {
+                const filled = i >= spent;
+                return (
+                  <button
+                    key={i}
+                    className="size-4 rounded-full border"
+                    style={{ borderColor: "var(--accent)", background: filled ? "var(--accent)" : "transparent" }}
+                    onClick={() => update((d) => (d.pactSpent = spent > i ? i : i + 1))}
+                    aria-label={`pact ${i + 1}`}
+                  />
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
 
       {LEVELS.map((lvl) => {
         const spells = byLevel(lvl);

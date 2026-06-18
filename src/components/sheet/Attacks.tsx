@@ -87,14 +87,23 @@ export function Attacks({ character: c, update }: SectionProps) {
         {c.weapons.map((w) => {
           const atk = weaponAttack(c, w);
           return (
-            <AttackRow
-              key={w.id}
-              character={c}
-              name={w.name}
-              meta={`${atk.damage} ${w.damageType}`}
-              toHit={atk.toHit}
-              damageExpr={atk.damage}
-            />
+            <div key={w.id} className="flex flex-col gap-1">
+              <AttackRow
+                character={c}
+                name={w.name}
+                meta={`${atk.damage} ${w.damageType}`}
+                toHit={atk.toHit}
+                damageExpr={atk.damage}
+              />
+              {w.ammo != null && (
+                <div className="flex items-center gap-2 px-3 text-xs text-[var(--muted)]">
+                  <span>Munizioni:</span>
+                  <button className="btn px-2 py-0.5" disabled={w.ammo <= 0} onClick={() => update((d) => { const x = d.weapons.find((y) => y.id === w.id); if (x && x.ammo != null) x.ammo = Math.max(0, x.ammo - 1); })}>−</button>
+                  <span className="font-bold" style={{ color: w.ammo <= 0 ? "var(--ember)" : "var(--accent)" }}>{w.ammo}</span>
+                  <button className="btn px-2 py-0.5" onClick={() => update((d) => { const x = d.weapons.find((y) => y.id === w.id); if (x && x.ammo != null) x.ammo = x.ammo + 1; })}>+</button>
+                </div>
+              )}
+            </div>
           );
         })}
       </div>

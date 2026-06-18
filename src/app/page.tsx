@@ -80,10 +80,15 @@ function CharacterCard({ c }: { c: Character }) {
       <div className="flex items-center">
         <Link href={`/sheet?c=${c.id}`} className="flex-1 flex items-center gap-3 p-4 min-w-0">
           <div
-            className="size-11 rounded-full grid place-items-center font-bold text-lg shrink-0"
+            className="size-11 rounded-full grid place-items-center font-bold text-lg shrink-0 overflow-hidden"
             style={{ background: "var(--accent-soft)", color: "var(--accent)" }}
           >
-            {c.name.trim().charAt(0).toUpperCase() || "?"}
+            {c.avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={c.avatar} alt="" className="size-full object-cover" />
+            ) : (
+              c.name.trim().charAt(0).toUpperCase() || "?"
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <p className="font-semibold truncate">{c.name}</p>

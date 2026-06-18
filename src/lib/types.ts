@@ -34,6 +34,8 @@ export interface Weapon {
   magicBonus?: number;
   properties?: string[];
   range?: string;
+  /** Ammunition / thrown quantity remaining (undefined = not tracked). */
+  ammo?: number;
   notes?: string;
   /** When set, marks this as a homebrew item with custom scaling formulas. */
   homebrew?: boolean;
@@ -122,10 +124,25 @@ export interface ClassEntry {
   level: number;
 }
 
+/** A companion / familiar / summon mini-sheet. */
+export interface Companion {
+  id: string;
+  name: string;
+  ac: number;
+  currentHp: number;
+  maxHp: number;
+  speed?: string;
+  notes?: string;
+}
+
 export interface Character {
   id: string;
   system: System;
   name: string;
+  /** Personalization */
+  avatar?: string; // small data-URL portrait
+  accent?: string; // accent color override (hex)
+  companions?: Companion[];
   // identity
   className?: string;
   classKey?: string; // legacy single-class key (still primary for display)
@@ -157,6 +174,7 @@ export interface Character {
   // spellcasting
   spellcastingAbility?: Ability;
   spellSlots?: Record<number, { max: number; spent: number }>;
+  pactSpent?: number; // warlock Pact Magic slots spent
   // combat state
   deathSaves?: { successes: number; failures: number };
   conditions?: string[]; // active condition keys (see srd CONDITIONS)

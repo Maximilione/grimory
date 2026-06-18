@@ -22,14 +22,18 @@ export function totalLevel(c: Character): number {
 /** Build the spell-slot map for a character (multiclass aware, pact merged in),
  * preserving already-spent slots. */
 export function buildSpellSlots(c: Character): Record<number, { max: number; spent: number }> {
-  const { slots, pact } = multiclassSlots(getClasses(c));
-  const merged: Record<number, number> = { ...slots };
-  if (pact) merged[pact.lvl] = (merged[pact.lvl] ?? 0) + pact.count;
+  const { slots } = multiclassSlots(getClasses(c));
   const out: Record<number, { max: number; spent: number }> = {};
-  for (const [lvl, max] of Object.entries(merged)) {
+  for (const [lvl, max] of Object.entries(slots)) {
     out[+lvl] = { max, spent: Math.min(c.spellSlots?.[+lvl]?.spent ?? 0, max) };
   }
   return out;
+}
+
+/** Warlock Pact Magic slots (tracked separately from normal slots). */
+export function pactMagic(c: Character): { slotLevel: number; max: number } | null {
+  const { pact } = multiclassSlots(getClasses(c));
+  return pact && pact.count ? { slotLevel: pact.lvl, max: pact.count } : null;
 }
 
 export function abilityMod(score: number): number {
@@ -58,12 +62,16 @@ export interface Derived {
   skills: Record<string, { mod: number; tier: "none" | "prof" | "expert"; ability: Ability }>;
   initiative: number;
   passivePerception: number;
+  passiveInvestigation: number;
+  passiveInsight: number;
   armorClass: number; // effective AC after feature effects
   speed: number; // effective speed after feature effects
   maxHp: number; // effective max HP after feature effects
   spellMod?: number;
   spellSaveDc?: number;
   spellAttack?: number;
+  /** Per-ability spell DC/attack (multiclass casters with different abilities). */
+  spellcasters: { ability: Ability; dc: number; attack: number }[];
 }
 
 export function derive(c: Character): Derived {
@@ -90,6 +98,20 @@ export function derive(c: Character): Derived {
 
   const sAbil = spellcastingAbility(c);
   const spellMod = sAbil ? mods[sAbil] : undefined;
+
+  // distinct spellcasting abilities (override, else each caster class) → DC/attack
+  const abils: Ability[] = [];
+  if (c.spellcastingAbility) abils.push(c.spellcastingAbility);
+  else
+    for (const e of getClasses(c)) {
+      const sp = classByKey(e.key)?.spellcasting;
+      if (sp && !abils.includes(sp)) abils.push(sp);
+    }
+  const spellcasters = abils.map((ability) => ({
+    ability,
+    dc: 8 + prof + mods[ability] - exh,
+    attack: prof + mods[ability] - exh,
+  }));
 
   // Apply feature effects (e.g. Unarmored Defense). Build a local var map here
   // rather than calling formulaVars() to avoid recursion.
@@ -124,13 +146,16 @@ export function derive(c: Character): Derived {
     saves,
     skills,
     initiative: mods.dex - exh + initBonus,
-    passivePerception: 10 + (mods[SKILLS.perception.ability] ?? 0) + (c.skills.perception === "expert" ? prof * 2 : c.skills.perception === "prof" ? prof : 0),
+    passivePerception: 10 + skills.perception.mod + exh,
+    passiveInvestigation: 10 + skills.investigation.mod + exh,
+    passiveInsight: 10 + skills.insight.mod + exh,
     armorClass: ac + acBonus,
     speed,
     maxHp: c.maxHp + hpBonus + (c.maxHpBonus ?? 0),
     spellMod,
     spellSaveDc: spellMod !== undefined ? 8 + prof + spellMod - exh : undefined,
     spellAttack: spellMod !== undefined ? prof + spellMod - exh : undefined,
+    spellcasters,
   };
 }
 

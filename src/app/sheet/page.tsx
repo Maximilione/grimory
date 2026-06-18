@@ -18,6 +18,8 @@ import {
   ScrollText,
   FlaskConical,
   BookOpen,
+  PawPrint,
+  NotebookPen,
   Settings as SettingsIcon,
   ChevronRight,
 } from "lucide-react";
@@ -41,12 +43,14 @@ import { CritFx } from "@/components/sheet/CritFx";
 import { RollModeToggle } from "@/components/sheet/RollModeToggle";
 import { RollLog } from "@/components/sheet/RollLog";
 import { ManualBrowser } from "@/components/ManualBrowser";
+import { Companions } from "@/components/sheet/Companions";
+import { Notes } from "@/components/sheet/Notes";
 
 type SectionKey =
   | "overview" | "abilities" | "skills" | "proficiencies"
   | "attacks" | "weapons"
-  | "spells" | "inventory" | "features"
-  | "homebrew" | "manual" | "settings";
+  | "spells" | "inventory" | "features" | "companions"
+  | "homebrew" | "manual" | "notes" | "settings";
 
 const SECTIONS: Record<SectionKey, { label: string; icon: React.ReactNode; comp: React.FC<SectionProps> }> = {
   overview: { label: "Panoramica", icon: <LayoutGrid size={18} />, comp: Overview },
@@ -58,17 +62,19 @@ const SECTIONS: Record<SectionKey, { label: string; icon: React.ReactNode; comp:
   spells: { label: "Incantesimi", icon: <Wand2 size={18} />, comp: Spells },
   inventory: { label: "Equipaggiamento", icon: <Backpack size={18} />, comp: Inventory },
   features: { label: "Tratti & Privilegi", icon: <ScrollText size={18} />, comp: Features },
+  companions: { label: "Compagni", icon: <PawPrint size={18} />, comp: Companions },
   homebrew: { label: "Homebrew", icon: <FlaskConical size={18} />, comp: Homebrew },
   manual: { label: "Manuale", icon: <BookOpen size={18} />, comp: ManualBrowser as React.FC<SectionProps> },
+  notes: { label: "Note & Diario", icon: <NotebookPen size={18} />, comp: Notes },
   settings: { label: "Impostazioni", icon: <SettingsIcon size={18} />, comp: Settings },
 };
 
 const GROUPS: { title: string; keys: SectionKey[] }[] = [
   { title: "Scheda", keys: ["overview", "abilities", "skills", "proficiencies"] },
   { title: "Combattimento", keys: ["attacks", "weapons"] },
-  { title: "Risorse", keys: ["spells", "inventory", "features"] },
+  { title: "Risorse", keys: ["spells", "inventory", "features", "companions"] },
   { title: "Riferimento", keys: ["manual"] },
-  { title: "Personalizza", keys: ["homebrew", "settings"] },
+  { title: "Personalizza", keys: ["notes", "homebrew", "settings"] },
 ];
 
 export default function SheetPage() {
@@ -106,7 +112,11 @@ function SheetInner() {
   const subtitle = [classLabel, `Liv. ${character.level}`].filter(Boolean).join(" · ");
 
   return (
-    <div id="app-shake" className="md:pl-72">
+    <div
+      id="app-shake"
+      className="md:pl-72"
+      style={character.accent ? ({ ["--accent" as string]: character.accent } as React.CSSProperties) : undefined}
+    >
       {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 w-72 bg-[var(--surface)] border-r border-[var(--border)] flex flex-col transition-transform md:translate-x-0 ${
@@ -121,9 +131,19 @@ function SheetInner() {
             <X size={20} />
           </button>
         </div>
-        <div className="p-4 border-b border-[var(--border)]">
-          <p className="font-bold truncate">{character.name}</p>
-          <p className="text-xs text-[var(--muted)] truncate">{subtitle || "—"}</p>
+        <div className="p-4 border-b border-[var(--border)] flex items-center gap-3">
+          <div className="size-11 rounded-full grid place-items-center font-bold shrink-0 overflow-hidden" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>
+            {character.avatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={character.avatar} alt="" className="size-full object-cover" />
+            ) : (
+              character.name.trim().charAt(0).toUpperCase() || "?"
+            )}
+          </div>
+          <div className="min-w-0">
+            <p className="font-bold truncate">{character.name}</p>
+            <p className="text-xs text-[var(--muted)] truncate">{subtitle || "—"}</p>
+          </div>
         </div>
         <nav className="flex-1 overflow-y-auto p-3">
           {GROUPS.map((g) => (

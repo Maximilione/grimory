@@ -112,6 +112,7 @@ export function newCharacter(partial: Partial<Character> = {}): Character {
     features: [],
     spellSlots: {},
     resources: [],
+    companions: [],
     customVars: {},
     deathSaves: { successes: 0, failures: 0 },
     conditions: [],

@@ -96,6 +96,9 @@ export function Weapons({ character: c, update }: SectionProps) {
               <L label="Gittata">
                 <input className="field" value={w.range ?? ""} onChange={(e) => edit(w.id, { range: e.target.value })} placeholder="6/18 m" />
               </L>
+              <L label="Munizioni (vuoto = non tracciate)">
+                <input type="number" className="field" value={w.ammo ?? ""} onChange={(e) => edit(w.id, { ammo: e.target.value === "" ? undefined : Math.max(0, +e.target.value || 0) })} placeholder="es. 20" />
+              </L>
               <L label="Proprietà (virgola)" full>
                 <input
                   className="field"
