@@ -15,6 +15,9 @@
   --ember-soft: #38201a;
   --good: #5fae7a;
   --radius: 14px;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 6px 18px rgba(0, 0, 0, 0.28);
+  --bevel: rgba(255, 255, 255, 0.05);
+  --page: radial-gradient(120% 80% at 50% -10%, #1a1c24 0%, var(--bg) 60%);
 }
 
 /* Light theme: traditional D&D parchment */
@@ -31,6 +34,10 @@
   --ember-soft: #ecd2bf;
   --good: #3c6b3a;
   --radius: 14px;
+  --shadow: 0 1px 2px rgba(90, 70, 30, 0.14), 0 6px 16px rgba(90, 70, 30, 0.16);
+  --bevel: rgba(255, 251, 240, 0.7);
+  --page: radial-gradient(125% 90% at 50% -10%, #f3ead0 0%, var(--bg) 55%),
+    repeating-linear-gradient(0deg, transparent 0 3px, rgba(120, 95, 50, 0.018) 3px 4px);
 }
 
 @theme inline {
@@ -65,7 +72,8 @@ html {
 }
 
 body {
-  background: var(--bg);
+  background: var(--page, var(--bg));
+  background-attachment: fixed;
   color: var(--text);
   font-family: var(--font-sans), system-ui, sans-serif;
   overscroll-behavior-y: none;
@@ -86,16 +94,29 @@ h1, h2, .font-display {
   width: 100%;
   font-size: 0.95rem;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
 .field:focus {
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  position: relative;
+}
+/* subtle top bevel highlight — gives cards a tooled, embossed feel */
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 1px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  background: linear-gradient(90deg, transparent, var(--bevel) 30%, var(--bevel) 70%, transparent);
+  pointer-events: none;
 }
 
 .btn {
@@ -111,19 +132,31 @@ h1, h2, .font-display {
   background: var(--surface-2);
   color: var(--text);
   cursor: pointer;
-  transition: transform 0.08s, border-color 0.15s, background 0.15s;
+  transition: transform 0.08s, border-color 0.15s, background 0.15s, box-shadow 0.15s;
   user-select: none;
+}
+@media (hover: hover) {
+  .btn:hover {
+    border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  }
 }
 .btn:active {
   transform: scale(0.97);
 }
 .btn-accent {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 88%, white) 0%, var(--accent) 100%);
+  border-color: color-mix(in srgb, var(--accent) 70%, black);
   color: #1a1407;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+@media (hover: hover) {
+  .btn-accent:hover {
+    filter: brightness(1.06);
+  }
 }
 .btn-ghost {
   background: transparent;
+  box-shadow: none;
 }
 .btn-danger {
   color: var(--ember);
@@ -131,7 +164,7 @@ h1, h2, .font-display {
 }
 
 .stat-box {
-  background: var(--surface-2);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--surface-2) 80%, var(--surface)), var(--surface-2));
   border: 1px solid var(--border);
   border-radius: 12px;
   display: flex;
@@ -140,7 +173,29 @@ h1, h2, .font-display {
   padding: 0.5rem 0.25rem;
   position: relative;
   overflow: hidden;
+  box-shadow: inset 0 1px 0 var(--bevel);
   isolation: isolate; /* contain the pixel-art watermark (z-index:-1) behind content */
+}
+
+/* Decorative section rule — thin double line with a diamond, evokes manual chapter breaks */
+.rule-fancy {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.rule-fancy::before,
+.rule-fancy::after {
+  content: "";
+  flex: 1;
+  height: 0;
+  border-top: 1px solid currentColor;
+  box-shadow: 0 3px 0 -2px currentColor;
+}
+.rule-fancy span {
+  font-size: 0.6rem;
+  transform: rotate(45deg);
+  opacity: 0.8;
 }
 
 ::-webkit-scrollbar {

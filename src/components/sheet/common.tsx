@@ -23,12 +23,15 @@ export function SectionHeader({
   action?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-end justify-between gap-3 mb-4">
-      <div>
-        <h2 className="text-xl font-bold">{title}</h2>
-        {desc && <p className="text-sm text-[var(--muted)] mt-0.5">{desc}</p>}
+    <div className="mb-4">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h2 className="text-xl font-bold font-display tracking-wide">{title}</h2>
+          {desc && <p className="text-sm text-[var(--muted)] mt-0.5">{desc}</p>}
+        </div>
+        {action}
       </div>
-      {action}
+      <div className="rule-fancy mt-2.5" aria-hidden><span>◆</span></div>
     </div>
   );
 }

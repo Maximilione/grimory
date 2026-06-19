@@ -162,12 +162,16 @@ function SheetInner() {
                   <button
                     key={k}
                     onClick={() => { setSection(k); setOpen(false); }}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm mb-0.5 transition-colors"
+                    className="group w-full flex items-center gap-3 pl-3 pr-3 py-2.5 rounded-lg text-sm mb-0.5 transition-colors relative hover:bg-[var(--surface-2)]"
                     style={{
-                      background: active ? "var(--accent-soft)" : "transparent",
+                      background: active ? "var(--accent-soft)" : undefined,
                       color: active ? "var(--accent)" : "var(--text)",
+                      fontWeight: active ? 600 : 400,
                     }}
                   >
+                    {active && (
+                      <span className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-full" style={{ background: "var(--accent)" }} />
+                    )}
                     {SECTIONS[k].icon}
                     <span className="flex-1 text-left">{SECTIONS[k].label}</span>
                     {active && <ChevronRight size={15} />}
