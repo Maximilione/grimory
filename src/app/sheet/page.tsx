@@ -47,6 +47,7 @@ import { ManualBrowser } from "@/components/ManualBrowser";
 import { Companions } from "@/components/sheet/Companions";
 import { Defenses } from "@/components/sheet/Defenses";
 import { Notes } from "@/components/sheet/Notes";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type SectionKey =
   | "overview" | "abilities" | "skills" | "proficiencies"
@@ -130,9 +131,12 @@ function SheetInner() {
           <Link href="/" className="flex items-center gap-2 text-sm text-[var(--muted)] hover:text-[var(--text)]">
             <Home size={16} /> Lista
           </Link>
-          <button className="md:hidden text-[var(--muted)]" onClick={() => setOpen(false)} aria-label="Chiudi menu">
-            <X size={20} />
-          </button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <button className="md:hidden text-[var(--muted)]" onClick={() => setOpen(false)} aria-label="Chiudi menu">
+              <X size={20} />
+            </button>
+          </div>
         </div>
         <div className="p-4 border-b border-[var(--border)] flex items-center gap-3">
           <div className="size-11 rounded-full grid place-items-center font-bold shrink-0 overflow-hidden" style={{ background: "var(--accent-soft)", color: "var(--accent)" }}>

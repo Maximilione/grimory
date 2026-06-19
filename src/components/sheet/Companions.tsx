@@ -61,6 +61,9 @@ export function Companions({ character: c, update }: SectionProps) {
             </div>
           }
         >
+          <div className="h-2.5 rounded-full bg-[var(--surface-2)] overflow-hidden mb-3">
+            <div className="h-full rounded-full transition-all" style={{ width: `${m.maxHp ? (m.currentHp / m.maxHp) * 100 : 0}%`, background: "var(--ember)" }} />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <L label="Nome" full><input className="field" value={m.name} onChange={(e) => edit(m.id, { name: e.target.value })} /></L>
             <L label="CA"><input type="number" className="field" value={m.ac} onChange={(e) => edit(m.id, { ac: +e.target.value || 0 })} /></L>

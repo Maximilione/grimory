@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
-:root {
+/* Dark theme (default): arcane grimoire */
+:root,
+[data-theme="dark"] {
   --bg: #0e0f13;
   --surface: #16181f;
   --surface-2: #1d2029;
@@ -9,9 +11,25 @@
   --muted: #9aa0ad;
   --accent: #d4a24e; /* arcane gold */
   --accent-soft: #3a3018;
-  --ember: #c1543a; /* damage / danger */
+  --ember: #c1543a;
   --ember-soft: #38201a;
   --good: #5fae7a;
+  --radius: 14px;
+}
+
+/* Light theme: traditional D&D parchment */
+[data-theme="light"] {
+  --bg: #eee3c8; /* parchment */
+  --surface: #f6efda;
+  --surface-2: #e6d8b6;
+  --border: #c9b78d;
+  --text: #2a2014; /* dark brown ink */
+  --muted: #6f5f43;
+  --accent: #8a5a16; /* antique gold/brown */
+  --accent-soft: #e4d3a8;
+  --ember: #9b2417; /* oxblood */
+  --ember-soft: #ecd2bf;
+  --good: #3c6b3a;
   --radius: 14px;
 }
 
@@ -28,6 +46,7 @@
   --color-ember-soft: var(--ember-soft);
   --color-good: var(--good);
   --font-sans: var(--font-geist-sans);
+  --font-display: var(--font-display);
   --radius-card: var(--radius);
 }
 
@@ -41,11 +60,21 @@ html {
   scroll-behavior: smooth;
 }
 
+html {
+  transition: background-color 0.2s ease;
+}
+
 body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--font-sans), system-ui, sans-serif;
   overscroll-behavior-y: none;
+}
+
+/* Traditional fantasy display face for headings */
+h1, h2, .font-display {
+  font-family: var(--font-display), "Iowan Old Style", Georgia, serif;
+  letter-spacing: 0.01em;
 }
 
 .field {

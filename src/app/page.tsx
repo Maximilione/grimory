@@ -18,6 +18,7 @@ import { classByKey } from "@/lib/srd";
 import { getClasses } from "@/lib/rules";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { BackupBar } from "@/components/BackupBar";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import type { Character } from "@/lib/types";
 
 export default function Home() {
@@ -25,11 +26,14 @@ export default function Home() {
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 pb-24 pt-[max(1.5rem,env(safe-area-inset-top))]">
-      <header className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight" style={{ color: "var(--accent)" }}>
-          Grimorio
-        </h1>
-        <p className="text-[var(--muted)] text-sm mt-1">Schede personaggio · D&amp;D 5e (2024)</p>
+      <header className="mb-6 flex items-start justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight" style={{ color: "var(--accent)" }}>
+            Grimorio
+          </h1>
+          <p className="text-[var(--muted)] text-sm mt-1">Schede personaggio · D&amp;D 5e (2024)</p>
+        </div>
+        <ThemeToggle />
       </header>
 
       <div className="mb-5">

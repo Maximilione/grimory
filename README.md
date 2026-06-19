@@ -8,7 +8,8 @@ Funziona offline. **I dati vivono sul dispositivo** (IndexedDB) + backup automat
 ## Stack
 
 - **Next.js 16** (App Router, Turbopack) + **React 19** + **TypeScript**
-- **Tailwind v4** (tema arcano dark, mobile-first)
+- **Tailwind v4** — temi **chiaro (pergamena D&D) e scuro (grimorio)**, toggle persistente, titoli in
+  font display Cinzel. Mobile-first.
 - **Dexie** (IndexedDB) — storage local-first reattivo
 - **zustand** — store del lanciatore di dadi
 - PWA: `app/manifest.ts` + `public/sw.js` (service worker offline)

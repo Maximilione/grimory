@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist } from "next/font/google";
+import { Geist, Cinzel } from "next/font/google";
 import "./globals.css";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import { SrdPrefetch } from "@/components/SrdPrefetch";
@@ -8,6 +8,15 @@ const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
+
+const cinzel = Cinzel({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: ["500", "700"],
+});
+
+// Set the theme before first paint to avoid a flash (reads saved choice, else system).
+const themeScript = `(function(){try{var t=localStorage.getItem('theme');if(!t||t==='system'){t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='dark';}})();`;
 
 const base = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
@@ -40,7 +49,10 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="it" data-scroll-behavior="smooth" className={`${geistSans.variable} h-full antialiased`}>
+    <html lang="it" suppressHydrationWarning data-scroll-behavior="smooth" className={`${geistSans.variable} ${cinzel.variable} h-full antialiased`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-full">
         {children}
         <ServiceWorker />
