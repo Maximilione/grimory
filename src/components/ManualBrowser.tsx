@@ -5,7 +5,7 @@ import { Search, Loader2, BookOpen, ChevronDown } from "lucide-react";
 import { CONDITIONS, CONDITION_DESC, ABILITY_NAMES } from "@/lib/srd";
 import { SPECIES_2024 } from "@/lib/species2024";
 import { FEATS_2024, GENERAL_FEATS } from "@/lib/feats2024";
-import { manualSearch, type ManualEntry } from "@/lib/srdApi";
+import { manualSearch, browseManual, type ManualEntry } from "@/lib/srdApi";
 
 type Cat = "all" | ManualEntry["category"];
 const CATS: { key: Cat; label: string }[] = [
@@ -24,25 +24,52 @@ export function ManualBrowser() {
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState(false);
   const seq = useRef(0);
+  // cache of full per-category browse lists so typing filters instantly
+  const browseCache = useRef<Partial<Record<Cat, ManualEntry[]>>>({});
+
+  // "Tutto" with no query → show the offline quick-ref (handled in render).
+  const showQuickRef = cat === "all" && !q.trim();
 
   useEffect(() => {
-    if (!q.trim()) {
+    if (showQuickRef) {
       setHits([]);
       setTouched(false);
+      setLoading(false);
+      return;
+    }
+    const my = ++seq.current;
+    const term = q.trim().toLowerCase();
+
+    // "Tutto" + query → live cross-category search (debounced)
+    if (cat === "all") {
+      setLoading(true);
+      setTouched(true);
+      const t = setTimeout(async () => {
+        const res = await manualSearch(q, cat);
+        if (my === seq.current) { setHits(res); setLoading(false); }
+      }, 350);
+      return () => clearTimeout(t);
+    }
+
+    // a specific category is selected → browse the whole list, filter by query
+    setTouched(true);
+    const cached = browseCache.current[cat];
+    const apply = (list: ManualEntry[]) => {
+      if (my !== seq.current) return;
+      const filtered = term ? list.filter((e) => e.name.toLowerCase().includes(term) || e.type.toLowerCase().includes(term)) : list;
+      setHits(filtered);
+      setLoading(false);
+    };
+    if (cached) {
+      apply(cached);
       return;
     }
     setLoading(true);
-    setTouched(true);
-    const my = ++seq.current;
-    const t = setTimeout(async () => {
-      const res = await manualSearch(q, cat);
-      if (my === seq.current) {
-        setHits(res);
-        setLoading(false);
-      }
-    }, 350);
-    return () => clearTimeout(t);
-  }, [q, cat]);
+    browseManual(cat as ManualEntry["category"]).then((list) => {
+      browseCache.current[cat] = list;
+      apply(list);
+    });
+  }, [q, cat, showQuickRef]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -87,14 +114,17 @@ export function ManualBrowser() {
       )}
       {!loading && hits.length > 0 && (
         <div className="flex flex-col gap-2">
-          {hits.map((h) => (
+          {hits.length > 120 && (
+            <p className="text-xs text-[var(--muted)]">Primi 120 di {hits.length}. Affina con la ricerca.</p>
+          )}
+          {hits.slice(0, 120).map((h) => (
             <Entry key={h.key} name={h.name} type={h.type} desc={h.desc} />
           ))}
         </div>
       )}
 
-      {/* offline quick reference (only when not searching) */}
-      {!q.trim() && (
+      {/* offline quick reference (only on "Tutto" with no search) */}
+      {showQuickRef && (
         <div className="flex flex-col gap-3">
           <Group title="Condizioni (2024)">
             {Object.entries(CONDITIONS).map(([key, label]) => (

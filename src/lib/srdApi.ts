@@ -650,6 +650,63 @@ export async function manualSearch(
   return all;
 }
 
+/**
+ * Browse a whole category as a list (no search term needed) from the cached
+ * SRD datasets — this is what makes the manual's category chips actually do
+ * something on their own. Instant after the startup prefetch / first load.
+ */
+export async function browseManual(category: ManualEntry["category"]): Promise<ManualEntry[]> {
+  try {
+    if (category === "spell") {
+      const all = await fetchAll(`${OPEN5E_API}/v2/spells/?document__key=srd-2024`);
+      return all
+        .map((r: any) => ({
+          key: `sp-${r.key}`,
+          name: r.name,
+          type: `Incantesimo · ${r.level === 0 ? "Trucchetto" : "Liv. " + r.level}${r.school?.name ? " · " + r.school.name : ""}`,
+          desc: descToText(r.desc, r.higher_level),
+          category: "spell" as const,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    }
+    if (category === "monster") {
+      const all = await fetchMonsters();
+      return all.map((m) => ({
+        key: `mo-${m.slug}`,
+        name: m.name,
+        type: `${m.size} ${m.type} · GS ${m.cr} · CA ${m.ac} · PF ${m.hp}`,
+        desc: [m.traits, m.actions].flat().map((e) => `${e.name}. ${e.desc}`).join("\n\n"),
+        category: "monster" as const,
+      }));
+    }
+    if (category === "item") {
+      const all = await fetchAll(`${OPEN5E_API}/v1/magicitems/?document__slug=wotc-srd`);
+      return all
+        .map((r: any) => ({
+          key: `it-${r.slug}`,
+          name: r.name,
+          type: `${r.type ?? "Oggetto"}${r.rarity ? " · " + r.rarity : ""}${r.requires_attunement ? " · sintonia" : ""}`,
+          desc: typeof r.desc === "string" ? r.desc : "",
+          category: "item" as const,
+        }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+    }
+    // rules
+    const all = await fetchAll(`${OPEN5E_API}/v1/sections/`);
+    return all
+      .map((r: any) => ({
+        key: `ru-${r.slug ?? r.name}`,
+        name: r.name,
+        type: "Regola",
+        desc: typeof r.desc === "string" ? r.desc : "",
+        category: "rule" as const,
+      }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  } catch {
+    return [];
+  }
+}
+
 // ---- Bestiary (monsters) ---------------------------------------------------
 
 export interface MonsterEntry {
