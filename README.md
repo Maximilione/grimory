@@ -203,6 +203,30 @@ bottone **Manuale** in home, rotta `/manual`:
 - **Riferimento rapido offline**: condizioni 2024 (con effetti), sfinimento, specie 2024 (tratti),
   caratteristiche.
 
+## Strumenti DM (rotte globali, dalla home)
+
+Strumenti non legati a un singolo PG, raggiungibili dalla griglia in home:
+
+- **Combattimento / tracker iniziativa** (`/tracker`, `Tracker.tsx`, tabella Dexie `encounters`):
+  scontri multipli, aggiungi i PG del party (CA/PF/iniziativa derivati) + mostri dal bestiario +
+  combattenti custom. Tira iniziativa per tutti, ordine automatico, round + turno corrente
+  evidenziato (avanti/indietro), PF con barra colorata, PF temp, condizioni, morte a 0 PF (teschio).
+  Persistito: uno scontro sopravvive a reload e chiusura app.
+- **Bestiario** (`/bestiary`, `Bestiary.tsx`): set mostri SRD (Open5e v1, ~330) scaricato una volta e
+  **in cache offline**. Ricerca per nome/tipo, stat block completo (caratteristiche, sensi, tratti,
+  azioni, reazioni, leggendarie). Bottoni **→ Incontro** (aggiunge al tracker, etichetta duplicati
+  "Goblin 2") e **→ Compagno** di un PG (attacchi parsati da `+X to hit (NdM)`).
+- **Generatori offline** (`/tools`, `generators.ts` + `Generators.tsx`): tabelle locali, istantanee,
+  zero API — PNG completo (tratto/quirk/desiderio/paura/possedimento), nomi per stirpe, ganci di
+  trama, dicerie, bottino per fascia, nomi di taverna. Tutto copiabile.
+
+## Stampa / PDF scheda
+
+Bottone stampante nell'header della scheda → `window.print()`. `SheetPrint.tsx` rende una scheda
+A4 completa di sola stampa (nascosta a schermo via `.print-sheet`/`@media print` in `globals.css`,
+con `.screen-only` che nasconde la UV interattiva): identità, caratteristiche+mod+TS, riquadri combattimento,
+abilità, attacchi, incantesimi, tratti, equipaggiamento, competenze. Salvabile come PDF dal dialogo di stampa.
+
 ## Talenti (`feats2024.ts`)
 
 Dal manuale: **10 Talenti d'Origine** + **36 Talenti General** (liv. 4+), con descrizione e, dove
