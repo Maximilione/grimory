@@ -23,6 +23,7 @@ import {
   NotebookPen,
   Settings as SettingsIcon,
   ChevronRight,
+  Printer,
 } from "lucide-react";
 import { useCharacter } from "@/lib/useCharacters";
 import { classByKey } from "@/lib/srd";
@@ -48,6 +49,7 @@ import { Companions } from "@/components/sheet/Companions";
 import { Defenses } from "@/components/sheet/Defenses";
 import { Notes } from "@/components/sheet/Notes";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SheetPrint } from "@/components/sheet/SheetPrint";
 
 type SectionKey =
   | "overview" | "abilities" | "skills" | "proficiencies"
@@ -121,6 +123,7 @@ function SheetInner() {
       className="md:pl-72"
       style={character.accent ? ({ ["--accent" as string]: character.accent } as React.CSSProperties) : undefined}
     >
+      <div className="screen-only">
       {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-40 w-72 bg-[var(--surface)] border-r border-[var(--border)] flex flex-col transition-transform md:translate-x-0 ${
@@ -193,6 +196,9 @@ function SheetInner() {
             <Menu size={22} />
           </button>
           <h1 className="font-bold flex-1 truncate">{SECTIONS[section].label}</h1>
+          <button className="text-[var(--muted)] hover:text-[var(--text)]" onClick={() => window.print()} title="Stampa / PDF" aria-label="Stampa">
+            <Printer size={19} />
+          </button>
           <span className="text-sm text-[var(--muted)] truncate hidden sm:block">{character.name}</span>
         </div>
       </header>
@@ -206,6 +212,10 @@ function SheetInner() {
       <CritFx />
       <RollModeToggle />
       <RollLog />
+      </div>
+
+      {/* Print-only full sheet */}
+      <SheetPrint c={character} />
     </div>
   );
 }

@@ -650,6 +650,145 @@ export async function manualSearch(
   return all;
 }
 
+// ---- Bestiary (monsters) ---------------------------------------------------
+
+export interface MonsterEntry {
+  name: string;
+  desc: string;
+}
+export interface Monster {
+  slug: string;
+  name: string;
+  size: string;
+  type: string;
+  alignment: string;
+  ac: number;
+  acDesc?: string;
+  hp: number;
+  hitDice?: string;
+  speed: string; // formatted, metric
+  abilities: { str: number; dex: number; con: number; int: number; wis: number; cha: number };
+  cr: string;
+  crNum: number;
+  saves?: string;
+  skills?: string;
+  senses?: string;
+  languages?: string;
+  vulnerabilities?: string;
+  resistances?: string;
+  immunities?: string;
+  conditionImmunities?: string;
+  traits: MonsterEntry[];
+  actions: MonsterEntry[];
+  legendary: MonsterEntry[];
+  reactions: MonsterEntry[];
+}
+
+const FT_TO_M = 0.3; // 30 ft ≈ 9 m, the metric convention this app uses
+
+function fmtSpeed(speed: any): string {
+  if (!speed || typeof speed !== "object") return "—";
+  const parts: string[] = [];
+  const label: Record<string, string> = { walk: "", fly: "volo ", swim: "nuoto ", climb: "scal. ", burrow: "scav. " };
+  for (const [k, v] of Object.entries(speed)) {
+    if (typeof v !== "number" || k === "hover") continue;
+    parts.push(`${label[k] ?? k + " "}${Math.round(v * FT_TO_M)} m`);
+  }
+  return parts.join(", ") || "—";
+}
+function crToNum(cr: string): number {
+  if (!cr) return 0;
+  if (cr.includes("/")) { const [a, b] = cr.split("/").map(Number); return a / b; }
+  return Number(cr) || 0;
+}
+function entries(arr: any): MonsterEntry[] {
+  return Array.isArray(arr) ? arr.filter((a) => a?.name).map((a) => ({ name: a.name, desc: a.desc ?? "" })) : [];
+}
+
+function mapMonster(r: any): Monster {
+  return {
+    slug: r.slug,
+    name: r.name,
+    size: r.size ?? "",
+    type: r.type ?? "",
+    alignment: r.alignment ?? "",
+    ac: r.armor_class ?? 10,
+    acDesc: r.armor_desc || undefined,
+    hp: r.hit_points ?? 1,
+    hitDice: r.hit_dice || undefined,
+    speed: fmtSpeed(r.speed),
+    abilities: {
+      str: r.strength ?? 10, dex: r.dexterity ?? 10, con: r.constitution ?? 10,
+      int: r.intelligence ?? 10, wis: r.wisdom ?? 10, cha: r.charisma ?? 10,
+    },
+    cr: String(r.challenge_rating ?? "0"),
+    crNum: crToNum(String(r.challenge_rating ?? "0")),
+    senses: r.senses || undefined,
+    languages: r.languages || undefined,
+    skills: r.skills && Object.keys(r.skills).length ? Object.entries(r.skills).map(([k, v]) => `${k} ${(v as number) >= 0 ? "+" : ""}${v}`).join(", ") : undefined,
+    vulnerabilities: r.damage_vulnerabilities || undefined,
+    resistances: r.damage_resistances || undefined,
+    immunities: r.damage_immunities || undefined,
+    conditionImmunities: r.condition_immunities || undefined,
+    traits: entries(r.special_abilities),
+    actions: entries(r.actions),
+    legendary: entries(r.legendary_actions),
+    reactions: entries(r.reactions),
+  };
+}
+
+/** The SRD monster set (~330), fetched once and cached for offline browsing. */
+export async function fetchMonsters(): Promise<Monster[]> {
+  try {
+    const all = await fetchAll(`${OPEN5E_API}/v1/monsters/?document__slug=wotc-srd`);
+    return all.map(mapMonster).sort((a, b) => a.name.localeCompare(b.name));
+  } catch {
+    return [];
+  }
+}
+
+/** Parse a "+5 to hit … (2d6 + 3) … damage" action into rough attack numbers. */
+export function parseMonsterAttack(desc: string): { toHit: number; damage: string } | null {
+  const hit = desc.match(/([+-]\d+)\s+to hit/i);
+  const dmg = desc.match(/\((\d+d\d+(?:\s*[+-]\s*\d+)?)\)/);
+  if (!hit && !dmg) return null;
+  return { toHit: hit ? Number(hit[1]) : 0, damage: dmg ? dmg[1].replace(/\s+/g, "") : "" };
+}
+
+const abilMod = (s: number) => Math.floor((s - 10) / 2);
+
+/** Build a tracker combatant from a monster (HP/AC/init mod/stat note). */
+export function monsterToCombatant(m: Monster) {
+  return {
+    name: m.name,
+    initiativeMod: abilMod(m.abilities.dex),
+    ac: m.ac,
+    currentHp: m.hp,
+    maxHp: m.hp,
+    cr: m.cr,
+    monsterSlug: m.slug,
+    isPC: false as const,
+    note: `${m.size} ${m.type} · GS ${m.cr}`,
+  };
+}
+
+/** Build a Character companion from a monster (basics + parsed attacks). */
+export function monsterToCompanion(m: Monster) {
+  const attacks = m.actions
+    .map((a) => { const p = parseMonsterAttack(a.desc); return p ? { id: uid(), name: a.name, toHit: p.toHit, damage: p.damage } : null; })
+    .filter(Boolean) as { id: string; name: string; toHit: number; damage: string }[];
+  return {
+    id: uid(),
+    name: m.name,
+    ac: m.ac,
+    currentHp: m.hp,
+    maxHp: m.hp,
+    speed: m.speed,
+    notes: `${m.size} ${m.type} · GS ${m.cr}${m.senses ? " · " + m.senses : ""}`,
+    attacks,
+  };
+}
+
 /** withId — attach a fresh id to a built partial. */
 export function withId<T extends object>(partial: T): T & { id: string } {
   return { ...partial, id: uid() };

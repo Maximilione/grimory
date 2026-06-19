@@ -6,6 +6,7 @@
 import Dexie, { type Table } from "dexie";
 import type { Ability, Character } from "./types";
 import { ABILITIES } from "./types";
+import type { Encounter } from "./encounter";
 
 interface SrdCacheRow {
   url: string;
@@ -16,6 +17,7 @@ interface SrdCacheRow {
 class SheetDB extends Dexie {
   characters!: Table<Character, string>;
   srdCache!: Table<SrdCacheRow, string>;
+  encounters!: Table<Encounter, string>;
   constructor() {
     super("dnd-sheets");
     this.version(1).stores({
@@ -26,6 +28,12 @@ class SheetDB extends Dexie {
     this.version(2).stores({
       characters: "id, name, system, updatedAt",
       srdCache: "url, at",
+    });
+    // v3: group-combat / initiative tracker encounters.
+    this.version(3).stores({
+      characters: "id, name, system, updatedAt",
+      srdCache: "url, at",
+      encounters: "id, updatedAt",
     });
   }
 }
@@ -155,6 +163,17 @@ export async function duplicateCharacter(id: string): Promise<Character | null> 
   const copy = newCharacter({ ...c, id: undefined, name: `${c.name} (copia)` });
   await saveCharacter(copy);
   return copy;
+}
+
+// ---- Encounters (initiative tracker) --------------------------------------
+
+export async function saveEncounter(e: Encounter): Promise<void> {
+  e.updatedAt = Date.now();
+  await db.encounters.put(e);
+}
+
+export async function deleteEncounter(id: string): Promise<void> {
+  await db.encounters.delete(id);
 }
 
 export { uid };

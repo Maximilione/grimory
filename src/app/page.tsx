@@ -11,6 +11,9 @@ import {
   Copy,
   Trash2,
   BookOpen,
+  Swords,
+  PawPrint,
+  Wand2,
 } from "lucide-react";
 import { useCharacters } from "@/lib/useCharacters";
 import { deleteCharacter, duplicateCharacter } from "@/lib/db";
@@ -40,13 +43,17 @@ export default function Home() {
         <InstallPrompt />
       </div>
 
-      <div className="flex gap-2 mb-6">
-        <Link href="/create" className="btn btn-accent flex-1 text-base py-3">
+      <div className="mb-4">
+        <Link href="/create" className="btn btn-accent w-full text-base py-3">
           <Plus size={18} /> Crea personaggio
         </Link>
-        <Link href="/manual" className="btn py-3" title="Manuale">
-          <BookOpen size={18} /> Manuale
-        </Link>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
+        <ToolLink href="/tracker" icon={<Swords size={18} />} label="Combattimento" />
+        <ToolLink href="/bestiary" icon={<PawPrint size={18} />} label="Bestiario" />
+        <ToolLink href="/tools" icon={<Wand2 size={18} />} label="Generatori" />
+        <ToolLink href="/manual" icon={<BookOpen size={18} />} label="Manuale" />
       </div>
 
       {characters === undefined ? (
@@ -66,6 +73,15 @@ export default function Home() {
 
       <BackupBar />
     </main>
+  );
+}
+
+function ToolLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
+  return (
+    <Link href={href} className="card flex flex-col items-center justify-center gap-1.5 py-4 px-2 text-center hover:border-[var(--accent)] transition-colors">
+      <span style={{ color: "var(--accent)" }}>{icon}</span>
+      <span className="text-xs font-medium leading-tight">{label}</span>
+    </Link>
   );
 }
 
