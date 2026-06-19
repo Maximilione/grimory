@@ -39,13 +39,13 @@ export function Abilities({ character: c, update }: SectionProps) {
         ))}
       </div>
 
-      <SectionHeader title="Tiri Salvezza" />
-      <div className="grid grid-cols-2 gap-2">
+      <SectionHeader title="Tiri Salvezza" desc="Spunta = competente (+ bonus di competenza). Il campo piccolo è un bonus extra (oggetti)." />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
         {ABILITIES.map((a) => {
           const save = d.saves[a];
           return (
-            <div key={a} className="card p-3 flex items-center justify-between gap-2">
-              <label className="flex items-center gap-2 text-sm min-w-0">
+            <div key={a} className="card p-3 flex items-center gap-2">
+              <label className="flex items-center gap-2 text-sm flex-1 min-w-0 cursor-pointer">
                 <input
                   type="checkbox"
                   checked={save.proficient}
@@ -54,18 +54,19 @@ export function Abilities({ character: c, update }: SectionProps) {
                       draft.savingThrowProf[a as Ability] = e.target.checked;
                     })
                   }
-                  className="accent-[var(--accent)] size-4"
+                  className="accent-[var(--accent)] size-4 shrink-0"
                 />
                 <span className="truncate">{ABILITY_NAMES[a]}</span>
               </label>
               <input
                 type="number"
-                className="field w-12 px-1 py-1 text-center text-xs shrink-0"
+                className="field px-1 py-1 text-center text-xs shrink-0"
+                style={{ width: "2.75rem" }}
                 title="Bonus extra TS (oggetti)"
                 value={c.saveBonus?.[a] ?? 0}
                 onChange={(e) => update((d) => { d.saveBonus ??= {}; const v = +e.target.value || 0; if (v) d.saveBonus[a] = v; else delete d.saveBonus[a]; })}
               />
-              <RollButton label={`TS ${ABILITY_NAMES[a]}`} bonus={save.mod} />
+              <RollButton label={`TS ${ABILITY_NAMES[a]}`} bonus={save.mod} className="shrink-0" />
             </div>
           );
         })}

@@ -24,12 +24,12 @@ export function SectionHeader({
 }) {
   return (
     <div className="mb-4">
-      <div className="flex items-end justify-between gap-3">
-        <div>
+      <div className="flex items-end justify-between gap-3 flex-wrap">
+        <div className="min-w-0">
           <h2 className="text-xl font-bold font-display tracking-wide">{title}</h2>
           {desc && <p className="text-sm text-[var(--muted)] mt-0.5">{desc}</p>}
         </div>
-        {action}
+        {action && <div className="flex items-center gap-2 shrink-0">{action}</div>}
       </div>
       <div className="rule-fancy mt-2.5" aria-hidden><span>◆</span></div>
     </div>

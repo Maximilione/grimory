@@ -85,6 +85,10 @@ h1, h2, .font-display {
   letter-spacing: 0.01em;
 }
 
+/* Component classes live in the `components` layer so Tailwind utilities
+   (w-12, px-1, py-1, etc.) always win — otherwise unlayered `.field { width:100% }`
+   beats `w-12` and inline-row inputs overflow on mobile. */
+@layer components {
 .field {
   background: var(--surface-2);
   border: 1px solid var(--border);
@@ -196,6 +200,7 @@ h1, h2, .font-display {
   font-size: 0.6rem;
   transform: rotate(45deg);
   opacity: 0.8;
+}
 }
 
 ::-webkit-scrollbar {
