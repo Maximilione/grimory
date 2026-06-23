@@ -220,6 +220,19 @@ Strumenti non legati a un singolo PG, raggiungibili dalla griglia in home:
   zero API — PNG completo (tratto/quirk/desiderio/paura/possedimento), nomi per stirpe, ganci di
   trama, dicerie, bottino per fascia, nomi di taverna. Tutto copiabile.
 
+## Dadi liberi (dice pad globale)
+
+FAB fluttuante (`DicePad.tsx`, montato nel layout) su tutte le pagine **tranne** scheda/tracker (che
+hanno già il sistema dadi). Pannello con risultato grande, quantità+modificatore, griglia d4–d100 e
+campo formula libera (`2d6 + 1d4 + 3`). Passa per `useRoll` (stesso motore dadi).
+
+## Descrizioni incantesimi nella scheda
+
+Gli incantesimi presi dal Manuale/Lista classe salvano già la descrizione (`mapSpell`). In scheda la
+card mostra il **testo completo leggibile** (espandi la card). Per incantesimi aggiunti a mano senza
+testo c'è **Carica descrizione** → `fetchSpellDetail(name)` cerca nello SRD in cache e riempie
+descrizione + scuola/tempo/gittata/durata/concentrazione/rituale mancanti.
+
 ## Stampa / PDF scheda
 
 Bottone stampante nell'header della scheda → `window.print()`. `SheetPrint.tsx` rende una scheda
