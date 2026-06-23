@@ -3,6 +3,7 @@ import { Geist, Cinzel } from "next/font/google";
 import "./globals.css";
 import { ServiceWorker } from "@/components/ServiceWorker";
 import { SrdPrefetch } from "@/components/SrdPrefetch";
+import { DicePad } from "@/components/DicePad";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -55,6 +56,7 @@ export default function RootLayout({
       </head>
       <body className="min-h-full">
         {children}
+        <DicePad />
         <ServiceWorker />
         <SrdPrefetch />
       </body>

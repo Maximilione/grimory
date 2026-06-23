@@ -127,6 +127,20 @@ function spellHit(r: any): SearchHit<Omit<Spell, "id">> {
   };
 }
 
+/** Look up a single spell by (exact, then loose) name from the cached SRD set —
+ * fills in the full description + meta for spells added by name. */
+export async function fetchSpellDetail(name: string): Promise<Omit<Spell, "id"> | null> {
+  try {
+    const t = name.trim().toLowerCase();
+    if (!t) return null;
+    const all = await fetchAll(`${OPEN5E_API}/v2/spells/?document__key=srd-2024`);
+    const r = all.find((x: any) => x.name?.toLowerCase() === t) || all.find((x: any) => x.name?.toLowerCase().includes(t));
+    return r ? mapSpell(r) : null;
+  } catch {
+    return null;
+  }
+}
+
 /** Spells from the 2024 SRD (name search). */
 export async function searchSpells(q: string): Promise<SearchHit<Omit<Spell, "id">>[]> {
   if (!q.trim()) return [];

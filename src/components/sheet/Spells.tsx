@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, Trash2, BookOpen, Wand2 } from "lucide-react";
+import { Plus, Trash2, BookOpen, Wand2, FileDown, Loader2 } from "lucide-react";
 import { uid } from "@/lib/db";
 import { derive, getClasses, pactMagic } from "@/lib/rules";
 import { classByKey } from "@/lib/srd";
 import type { Spell } from "@/lib/types";
-import { searchSpells, withId } from "@/lib/srdApi";
+import { searchSpells, fetchSpellDetail, withId } from "@/lib/srdApi";
 import { ClassSpellPicker } from "./ClassSpellPicker";
 import {
   SectionHeader,
@@ -25,6 +25,28 @@ export function Spells({ character: c, update }: SectionProps) {
   const d = derive(c);
   const [search, setSearch] = useState(false);
   const [classList, setClassList] = useState(false);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  // Fill description + missing meta for a spell by looking it up by name in the SRD cache.
+  async function loadDesc(s: Spell) {
+    setLoadingId(s.id);
+    const det = await fetchSpellDetail(s.name);
+    if (det) {
+      update((draft) => {
+        const sp = draft.spells.find((x) => x.id === s.id);
+        if (!sp) return;
+        if (det.description) sp.description = det.description;
+        if (!sp.school && det.school) sp.school = det.school;
+        if (!sp.castingTime && det.castingTime) sp.castingTime = det.castingTime;
+        if (!sp.range && det.range) sp.range = det.range;
+        if (!sp.duration && det.duration) sp.duration = det.duration;
+        if (!sp.components && det.components) sp.components = det.components;
+        if (det.concentration) sp.concentration = det.concentration;
+        if (det.ritual) sp.ritual = det.ritual;
+      });
+    }
+    setLoadingId(null);
+  }
   // caster classes the character has (for the class spell-list picker)
   const casterKeys = getClasses(c).map((e) => e.key).filter((k) => classByKey(k)?.spellcasting);
   const casterLabel = casterKeys.map((k) => classByKey(k)?.name ?? k).join(" / ");
@@ -189,6 +211,19 @@ export function Spells({ character: c, update }: SectionProps) {
                   ) : undefined
                 }
               >
+                {/* readable description (full text) + on-demand load */}
+                {s.description ? (
+                  <p className="text-sm text-[var(--muted)] whitespace-pre-line leading-relaxed mb-3">{s.description}</p>
+                ) : (
+                  <button
+                    className="btn btn-ghost text-sm mb-3"
+                    disabled={loadingId === s.id}
+                    onClick={() => loadDesc(s)}
+                  >
+                    {loadingId === s.id ? <Loader2 size={15} className="animate-spin" /> : <FileDown size={15} />}
+                    Carica descrizione
+                  </button>
+                )}
                 <div className="grid grid-cols-2 gap-3">
                   <L label="Nome" full>
                     <input className="field" value={s.name} onChange={(e) => edit(s.id, { name: e.target.value })} />
